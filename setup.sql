@@ -1,8 +1,8 @@
--- Plauderecke: Datenbank einrichten
--- Einmal im Supabase "SQL Editor" einfügen und auf "Run" tippen.
--- Das Skript darf auch mehrmals laufen, es macht dann nichts kaputt.
+/* Plauderecke: Datenbank einrichten */
+/* Einmal im Supabase "SQL Editor" einfügen und auf "Run" tippen. */
+/* Das Skript darf auch mehrmals laufen, es macht dann nichts kaputt. */
 
--- ---------- Tabellen ----------
+/* ---------- Tabellen ---------- */
 
 create table if not exists public.groups (
   id uuid primary key default gen_random_uuid(),
@@ -36,9 +36,9 @@ alter table public.groups enable row level security;
 alter table public.members enable row level security;
 alter table public.messages enable row level security;
 
--- ---------- Wer darf was ----------
+/* ---------- Wer darf was ---------- */
 
--- Ist die angemeldete Person in dieser Gruppe? (security definer, damit sich die Regeln nicht im Kreis drehen)
+/* Ist die angemeldete Person in dieser Gruppe? (security definer, damit sich die Regeln nicht im Kreis drehen) */
 create or replace function public.is_member(g uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.members where group_id = g and user_id = auth.uid());
@@ -61,7 +61,7 @@ drop policy if exists "members: leave" on public.members;
 create policy "members: leave" on public.members
   for delete to authenticated using (user_id = auth.uid());
 
--- Beim eigenen Eintrag darf nur der Name geändert werden, nicht die Gruppe
+/* Beim eigenen Eintrag darf nur der Name geändert werden, nicht die Gruppe */
 revoke update on public.members from anon, authenticated;
 grant update (name) on public.members to authenticated;
 
@@ -77,7 +77,7 @@ drop policy if exists "messages: delete own" on public.messages;
 create policy "messages: delete own" on public.messages
   for delete to authenticated using (user_id = auth.uid());
 
--- ---------- Gruppe erstellen und mit Einladungscode beitreten ----------
+/* ---------- Gruppe erstellen und mit Einladungscode beitreten ---------- */
 
 create or replace function public.create_group(group_name text, my_name text) returns public.groups
 language plpgsql security definer set search_path = public as $$
@@ -106,7 +106,7 @@ revoke execute on function public.join_group(text, text) from public, anon;
 grant execute on function public.create_group(text, text) to authenticated;
 grant execute on function public.join_group(text, text) to authenticated;
 
--- ---------- Live-Updates ----------
+/* ---------- Live-Updates ---------- */
 
 do $$
 begin
@@ -118,8 +118,8 @@ begin
   end if;
 end $$;
 
--- ---------- Speicher für Fotos, Videos und Sprachnachrichten ----------
--- Dateien liegen unter zufälligen Namen; hochladen dürfen nur Mitglieder der jeweiligen Gruppe.
+/* ---------- Speicher für Fotos, Videos und Sprachnachrichten ---------- */
+/* Dateien liegen unter zufälligen Namen; hochladen dürfen nur Mitglieder der jeweiligen Gruppe. */
 
 insert into storage.buckets (id, name, public, file_size_limit)
 values ('media', 'media', true, 52428800)
@@ -137,3 +137,8 @@ create policy "media: see own" on storage.objects
 drop policy if exists "media: delete own" on storage.objects;
 create policy "media: delete own" on storage.objects
   for delete to authenticated using (bucket_id = 'media' and owner_id = (auth.uid())::text);
+
+/* Kontrolle: hier sollte jetzt eine Zeile mit 3 Tabellen und dem Speicher stehen */
+select 'Plauderecke ist eingerichtet' as status,
+  (select count(*) from pg_tables where schemaname = 'public' and tablename in ('groups', 'members', 'messages')) as tabellen,
+  (select count(*) from storage.buckets where id = 'media') as speicher;

@@ -16,7 +16,7 @@ In diesem Ordner liegen:
    - Region: **Central EU (Frankfurt)**
 
    Tippe dann auf **Create new project** und warte 1 bis 2 Minuten.
-3. Links im Menü: **SQL Editor**. Kopiere den ganzen Text aus `setup.sql`, füge ihn ein und tippe auf **Run**. Kommt eine Warnung, bestätige mit **Run this query**. Am Ende steht „Success. No rows returned“.
+3. Links im Menü: **SQL Editor**. Kopiere den ganzen Text aus `setup.sql`, füge ihn ein und tippe auf **Run**. Kommt eine Warnung, bestätige mit **Run this query**. Unten erscheint dann eine Zeile „Plauderecke ist eingerichtet“ mit **tabellen 3** und **speicher 1**.
 4. Links: **Authentication**, dann **Sign In / Providers**. Schalte **Allow anonymous sign-ins** ein und tippe auf **Save changes**. Damit können deine Freunde ohne eigenes Konto mitmachen.
 5. Links: **Project Settings** (Zahnrad). Dort brauchst du zwei Werte:
    - Unter **Data API**: die **Project URL**, zum Beispiel `https://abcdefgh.supabase.co`
