@@ -455,6 +455,7 @@ img{max-width:100%}
         ],
         button: 'Verbinden',
       });
+      v.url = v.url.replace(/^(https:\/\/[^\s/]+)\/.*$/i, '$1'); // "…supabase.co/rest/v1/" also works
       if (/github\.io|netlify\.app/i.test(v.url) || v.url.includes(location.host)) toast('Das ist die Adresse deiner Website. Hier gehört die Project URL aus Supabase hin, sie endet auf .supabase.co');
       else if (validCfg(v.url, v.key)){ cfg = { url: v.url.trim().replace(/\/$/, ''), key: v.key.trim() }; store.set('cfg', JSON.stringify(cfg)); }
       else toast('Das passt noch nicht. Die URL beginnt mit https:// und der Key ist eine lange Zeichenkette.');
