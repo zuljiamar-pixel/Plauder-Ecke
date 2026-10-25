@@ -62,7 +62,8 @@ Damit Handys Bescheid bekommen, wenn jemand schreibt, auch wenn Plauderecke zu i
    - Name: genau `notify`
    - Den Beispiel-Code löschen und den ganzen Text aus `supabase/functions/notify/index.ts` einfügen
    - **Deploy function** tippen
-3. Bei der Funktion `notify` unter **Details** die Option **Verify JWT** ausschalten und speichern. Die Funktion prüft selbst, ob ein Aufruf von deiner Datenbank kommt.
+   - Hinweis: Die Adresse der Funktion steht in `index.html` und `push.sql` (bei dir: `swift-task`). Heißt deine Funktion anders, dort anpassen.
+3. Bei der Funktion `notify` unter **Settings** die Option **Verify JWT with legacy secret** ausschalten und speichern. Die Funktion prüft selbst, ob ein Aufruf von deiner Datenbank kommt.
 4. Auf der Website auf **Einschalten** tippen (oder unter **Einladen** › **Benachrichtigungen einschalten**) und erlauben. Das macht jeder auf seinem eigenen Handy.
 
 Auf dem iPhone gehen Benachrichtigungen nur, wenn Plauderecke über Teilen › **Zum Home-Bildschirm** hinzugefügt und von dort geöffnet wird.

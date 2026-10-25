@@ -1380,7 +1380,7 @@ img{max-width:100%}
     }
     const reg = await navigator.serviceWorker.register('sw.js');
     await navigator.serviceWorker.ready;
-    const r = await fetch(cfg.url + '/functions/v1/notify');
+    const r = await fetch(cfg.url + '/functions/v1/swift-task');
     const key = r.ok ? (await r.json()).publicKey : null;
     if (!key) throw new Error('server not ready');
     let sub = await reg.pushManager.getSubscription();

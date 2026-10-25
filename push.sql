@@ -50,7 +50,7 @@ declare s text;
 begin
   select secret into s from public.push_config where id = 1;
   perform net.http_post(
-    url := 'https://yyruenmtgfvegxenbhvp.supabase.co/functions/v1/notify',
+    url := 'https://yyruenmtgfvegxenbhvp.supabase.co/functions/v1/swift-task',
     body := jsonb_build_object('message', jsonb_build_object('id', new.id, 'group_id', new.group_id, 'user_id', new.user_id, 'kind', new.kind, 'text', left(new.text, 200))),
     headers := jsonb_build_object('Content-Type', 'application/json', 'x-plauder-secret', s),
     timeout_milliseconds := 5000
