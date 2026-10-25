@@ -1,0 +1,1422 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#fffc00">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Plauderecke">
+<title>Plauderecke</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23fffc00'/%3E%3Crect x='5' y='6' width='22' height='16' rx='8' fill='%2316161a'/%3E%3Cpath d='M10 20l-2 6 7-5z' fill='%2316161a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
+<style>
+/* Layout: group list left with a yellow brand band, conversation right; on phones the list becomes a yellow chip bar on top */
+:root{
+  --bg:#f2f2f4; --panel:#ffffff; --rail:#ffffff; --ink:#16161a; --muted:#85868f; --line:#ebebef; --field:#f0f0f3;
+  --yellow:#fffc00; --yellow-ink:#16161a; --me:#f23c57; --friend:#0a9ff0; --online:#0fa968; --danger:#e1251b;
+  --p1:#0a9ff0; --p2:#0f9fa8; --p3:#9b55d6; --p4:#5aa312; --p5:#ff8a00; --on-color:#ffffff;
+  --chip:#ffffff; --chip-ink:#16161a; --bar:#cfd0d6; --tile:#1b1b20;
+  --scrim:rgba(0,0,0,.9); --scrim-soft:rgba(0,0,0,.45); --shadow:rgba(0,0,0,.16); --me-glow:rgba(242,60,87,.22);
+  --font:"Nunito", "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#000000; --panel:#121214; --rail:#0b0b0c; --ink:#f5f5f7; --muted:#8e8f98; --line:#26262b; --field:#222226;
+  --me:#ff5a72; --friend:#3dbdff; --online:#34d399; --danger:#ff6b61; --bar:#46474e; --shadow:rgba(0,0,0,.5); --me-glow:rgba(255,90,114,.28);
+  color-scheme:dark;
+}}
+[hidden]{display:none!important}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%}
+body{margin:0;height:100%;height:100dvh;padding-top:env(safe-area-inset-top, 0px);padding-bottom:env(safe-area-inset-bottom, 0px);background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.45;font-weight:600;-webkit-tap-highlight-color:transparent}
+button,input,textarea{font:inherit;color:inherit}
+img{max-width:100%}
+:focus-visible{outline:2px solid var(--friend);outline-offset:2px}
+
+.app{height:100%;display:grid;grid-template-columns:290px 1fr;min-height:0}
+.rail{background:var(--rail);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;overflow-y:auto}
+.brand{background:var(--yellow);color:var(--yellow-ink);font-weight:900;font-size:1.4rem;letter-spacing:-.01em;display:flex;align-items:center;gap:10px;padding-block:18px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:16px;flex:none}
+.brand svg{width:28px;height:28px;flex:none}
+.rail-body{display:flex;flex-direction:column;gap:18px;padding-block:16px;padding-left:max(12px, env(safe-area-inset-left, 0px));padding-right:12px}
+.label{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:800;padding-left:8px}
+.channels{display:flex;flex-direction:column;gap:2px;list-style:none;margin:0;padding:0}
+.channels button{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:none;border:0;border-radius:16px;padding:8px;cursor:pointer}
+.channels button:hover,.channels button[aria-current="true"]{background:var(--field)}
+.ch-icon{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:1.1rem;color:var(--on-color);flex:none;text-transform:uppercase}
+.ch-text{display:flex;flex-direction:column;min-width:0;flex:1}
+.ch-name{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch-sub{font-size:.78rem;color:var(--muted);font-weight:600}
+.ch-sub.new{color:var(--me);font-weight:800}
+.count{flex:none;min-width:22px;height:22px;border-radius:11px;padding:0 7px;display:grid;place-items:center;background:var(--me);color:var(--on-color);font-size:.74rem;font-weight:900}
+.newch{display:flex;gap:6px;padding-inline:4px}
+.newch input{flex:1;min-width:0;border:0;background:var(--field);border-radius:999px;padding:9px 14px;font-weight:700}
+.newch button{flex:none;width:38px;height:38px;border:0;background:var(--yellow);color:var(--yellow-ink);border-radius:50%;font-weight:900;font-size:1.2rem;cursor:pointer}
+.newch button:disabled{opacity:.45;cursor:default}
+.online{display:flex;flex-direction:column;gap:10px;padding-left:8px}
+.person{display:flex;align-items:center;gap:10px;min-width:0}
+.av{position:relative;flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--on-color);font-weight:900;font-size:.9rem}
+.person .av::after{content:"";position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:var(--online);border:2px solid var(--rail)}
+.person span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.hint{font-size:.82rem;color:var(--muted);font-weight:600;padding-left:8px;margin:0}
+
+.main{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--panel)}
+.head{display:flex;align-items:center;gap:12px;padding-block:12px;padding-left:20px;padding-right:max(20px, env(safe-area-inset-right, 0px));border-bottom:1px solid var(--line)}
+.head .ch-icon{width:40px;height:40px;font-size:1rem}
+.head-text{display:flex;flex-direction:column;min-width:0;flex:1}
+.head h1{margin:0;font-weight:900;font-size:1.2rem;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.status{font-size:.78rem;color:var(--muted);white-space:nowrap;font-weight:700;min-height:1.1em;overflow:hidden;text-overflow:ellipsis}
+.faces{display:flex;flex:none}
+.faces .av{width:30px;height:30px;font-size:.78rem;border:2px solid var(--panel);margin-left:-8px}
+.invite-btn{flex:none;border:0;background:var(--yellow);color:var(--yellow-ink);border-radius:999px;padding:8px 14px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:6px}
+.invite-btn svg{width:18px;height:18px}
+
+.log{flex:1;overflow-y:auto;padding-block:12px 8px;padding-left:20px;padding-right:max(20px, env(safe-area-inset-right, 0px));display:flex;flex-direction:column;min-height:0;overscroll-behavior:contain}
+.day{align-self:center;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:14px 0 2px;font-weight:800}
+.grp{display:flex;flex-direction:column;gap:2px;margin-top:12px}
+.who{font-size:.74rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--c);display:flex;gap:8px;align-items:baseline}
+.who time{color:var(--muted);font-weight:700;letter-spacing:0;font-variant-numeric:tabular-nums}
+.bubble{position:relative;border-left:2.5px solid var(--c);padding:1px 70px 1px 10px;white-space:pre-wrap;overflow-wrap:anywhere;min-width:0;font-weight:600;font-size:1rem}
+.bubble a{color:var(--friend);text-decoration:underline;text-underline-offset:2px}
+.del{position:absolute;top:0;right:0;border:0;background:var(--field);color:var(--muted);border-radius:999px;font-size:.72rem;font-weight:800;padding:2px 10px;cursor:pointer;opacity:0;transition:opacity .15s}
+.bubble:hover .del,.bubble.show .del,.del:focus-visible,.del.armed{opacity:1}
+.del.armed{color:var(--on-color);background:var(--danger)}
+.empty{margin:auto;text-align:center;max-width:34ch;color:var(--muted);display:flex;flex-direction:column;gap:8px;align-items:center;font-weight:600}
+.empty .bigicon{width:72px;height:72px;border-radius:24px;background:var(--yellow);color:var(--yellow-ink);display:grid;place-items:center;margin-bottom:4px}
+.empty .bigicon svg{width:38px;height:38px}
+.empty b{font-size:1.35rem;color:var(--ink);font-weight:900}
+
+.typing{min-height:24px;font-size:.82rem;color:var(--muted);font-weight:700;padding-left:20px;padding-right:max(20px, env(safe-area-inset-right, 0px))}
+.typing i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--friend);margin-right:3px;animation:bob 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s;margin-right:8px}
+@keyframes bob{50%{transform:translateY(-3px)}}
+.eq{display:inline-flex;align-items:center;gap:2px;height:12px;margin-right:8px;vertical-align:-1px}
+.eq b{display:block;width:3px;height:100%;border-radius:2px;background:var(--me);animation:eq .9s ease-in-out infinite}
+.eq b:nth-child(2){animation-delay:.15s}.eq b:nth-child(3){animation-delay:.3s}.eq b:nth-child(4){animation-delay:.45s}
+@keyframes eq{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+
+.tray{display:flex;gap:8px;flex-wrap:wrap;padding-block:10px 0;padding-left:20px;padding-right:max(20px, env(safe-area-inset-right, 0px));border-top:1px solid var(--line)}
+.tray:not([hidden])+.compose{border-top:0}
+.thumb{position:relative;width:76px;height:76px;border-radius:16px;overflow:hidden;background:var(--field)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb>button{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:0;background:var(--ink);color:var(--panel);font-size:14px;line-height:1;cursor:pointer}
+.thumb.is-video{background:var(--tile)}
+.thumb .badge{position:absolute;left:4px;bottom:4px;display:flex;align-items:center;gap:3px;background:var(--scrim-soft);color:var(--on-color);font-size:.66rem;font-weight:900;padding:1px 6px 1px 4px;border-radius:999px}
+.thumb .badge svg{width:10px;height:10px}
+.thumb .prog{position:absolute;inset:0;display:grid;place-items:center;background:var(--scrim-soft);color:var(--on-color);font-weight:900;font-size:.85rem}
+.tray.busy .thumb{opacity:.6}
+
+/* Composer; while recording the text field turns into the live recording bar */
+.compose{position:relative;display:flex;gap:8px;align-items:flex-end;padding-block:10px 14px;padding-left:16px;padding-right:max(16px, env(safe-area-inset-right, 0px));border-top:1px solid var(--line)}
+.tool{flex:none;width:42px;height:42px;border-radius:50%;border:0;background:var(--field);color:var(--ink);display:grid;place-items:center;cursor:pointer}
+.tool:hover{background:var(--yellow);color:var(--yellow-ink)}
+.tool svg{width:21px;height:21px}
+.compose textarea{flex:1;min-width:0;resize:none;border:0;background:var(--field);border-radius:21px;padding:10px 16px;max-height:160px;line-height:1.4;font-weight:700}
+.compose textarea::placeholder{color:var(--muted)}
+.compose.recording .tool,.compose.recording textarea{display:none}
+.send{position:relative;z-index:2;flex:none;border:0;background:var(--yellow);color:var(--yellow-ink);border-radius:50%;width:42px;height:42px;display:grid;place-items:center;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:transform .15s}
+.send svg{width:20px;height:20px;pointer-events:none}
+.send .i-mic,.send .i-stop{display:none}
+.send[data-mode="mic"] .i-mic{display:block}
+.send[data-mode="mic"] .i-send{display:none}
+.send:disabled{opacity:.35;cursor:default}
+.send.rec{background:var(--me);color:var(--on-color);transform:scale(calc(1.3 + var(--lvl, 0) * .5));box-shadow:0 0 0 calc(5px + var(--lvl, 0) * 22px) var(--me-glow);transition:transform .07s linear, box-shadow .07s linear}
+.recbar{flex:1;min-width:0;display:flex;align-items:center;gap:10px;height:42px;padding:0 10px 0 14px;border-radius:21px;background:var(--field);overflow:hidden}
+.rec-dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--me);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+.rec-time{flex:none;min-width:2.6em;font-weight:900;font-variant-numeric:tabular-nums}
+.rec-wave{flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:2px;height:26px;overflow:hidden}
+.rec-wave i{flex:none;width:3px;border-radius:2px;background:var(--me);height:calc(var(--h, .08) * 100%);min-height:3px}
+.rec-hint{flex:none;font-size:.8rem;font-weight:800;white-space:nowrap;color:transparent;background:linear-gradient(90deg, var(--muted) 35%, var(--ink) 50%, var(--muted) 65%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;animation:shine 2s linear infinite}
+@keyframes shine{from{background-position:100% 0}to{background-position:-150% 0}}
+.recbar.cancel .rec-hint{background:none;color:var(--danger);animation:none}
+.recbar.cancel .rec-wave i{background:var(--muted)}
+.rec-trash{flex:none;border:0;background:none;color:var(--danger);width:30px;height:30px;display:grid;place-items:center;cursor:pointer;margin-left:-6px}
+.rec-trash svg{width:20px;height:20px}
+.lock{position:absolute;z-index:1;right:max(16px, env(safe-area-inset-right, 0px));bottom:84px;width:42px;padding:10px 0 8px;border-radius:21px;background:var(--panel);color:var(--muted);box-shadow:0 6px 22px var(--shadow);display:flex;flex-direction:column;align-items:center;gap:2px;animation:float 1.3s ease-in-out infinite}
+.lock svg{width:18px;height:18px}
+.lock.near{color:var(--me)}
+@keyframes float{50%{transform:translateY(-5px)}}
+
+.pics{display:grid;gap:4px;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));width:min(300px,100%);margin-block:3px}
+.pics.one{grid-template-columns:1fr}
+.pics button{padding:0;border:0;background:var(--field);border-radius:16px;overflow:hidden;cursor:zoom-in;display:block}
+.pics img{display:block;width:100%;height:150px;object-fit:cover}
+.pics.one img{height:auto;max-height:400px;object-fit:contain}
+.gone{padding:22px 10px;font-size:.8rem;color:var(--muted);text-align:center;background:var(--field);border-radius:16px}
+
+.vid{position:relative;display:block;max-width:100%;max-height:380px;border:0;padding:0;margin-block:3px;border-radius:16px;overflow:hidden;background:var(--tile);cursor:pointer}
+.vid img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.vid-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:54px;height:54px;border-radius:50%;background:var(--scrim-soft);color:var(--on-color);display:grid;place-items:center}
+.vid-play svg{width:24px;height:24px;margin-left:3px}
+.vid-dur{position:absolute;right:8px;bottom:8px;background:var(--scrim-soft);color:var(--on-color);font-size:.72rem;font-weight:900;padding:2px 8px;border-radius:999px;font-variant-numeric:tabular-nums}
+
+.voice{display:flex;align-items:center;gap:10px;background:var(--field);border-radius:999px;padding:5px 8px 5px 5px;width:min(290px,100%);margin-block:2px}
+.vplay{position:relative;flex:none;width:38px;height:38px;border-radius:50%;border:0;background:var(--c);color:var(--on-color);display:grid;place-items:center;cursor:pointer}
+.vplay svg{width:16px;height:16px}
+.vplay .i-pause{display:none}
+.voice.playing .vplay .i-play{display:none}
+.voice.playing .vplay .i-pause{display:block}
+.voice.playing .vplay::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid var(--c);animation:ripple 1.6s ease-out infinite}
+@keyframes ripple{0%{transform:scale(1);opacity:.75}100%{transform:scale(1.85);opacity:0}}
+.vbars{flex:1;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:2px;height:30px;cursor:pointer}
+.vbars i{flex:1;min-width:2px;max-width:4px;border-radius:2px;background:var(--bar);height:calc(var(--h) * 100%);min-height:3px;transition:transform .15s,background-color .15s}
+.vbars i.on{background:var(--c)}
+.vbars i.now{background:var(--c);transform:scaleY(1.4)}
+.vt{flex:none;min-width:2.4em;text-align:right;font-size:.8rem;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+.vdot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--friend)}
+.vspeed{flex:none;border:0;background:var(--panel);color:var(--ink);border-radius:999px;padding:3px 8px;font-size:.72rem;font-weight:900;cursor:pointer;font-variant-numeric:tabular-nums}
+
+/* Bottom sheet (invite and settings) */
+.sheet-wrap{position:fixed;inset:0;z-index:15;background:var(--scrim-soft);display:flex;align-items:flex-end;justify-content:center}
+.sheet{position:relative;width:100%;max-width:460px;max-height:100%;overflow-y:auto;background:var(--panel);color:var(--ink);border-radius:28px 28px 0 0;padding-block:12px max(24px, env(safe-area-inset-bottom, 0px));padding-left:max(20px, env(safe-area-inset-left, 0px));padding-right:max(20px, env(safe-area-inset-right, 0px));display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;animation:up .3s cubic-bezier(.2,.9,.3,1.15)}
+@keyframes up{from{transform:translateY(48px);opacity:0}}
+.grab{width:42px;height:5px;border-radius:3px;background:var(--line)}
+.sheet h2{margin:0;font-weight:900;font-size:1.3rem;letter-spacing:-.01em}
+.sheet p{margin:0;color:var(--muted);font-weight:600;max-width:36ch;font-size:.92rem}
+.x-close{position:absolute;top:12px;right:max(14px, env(safe-area-inset-right, 0px));width:36px;height:36px;border-radius:50%;border:0;background:var(--field);color:var(--ink);font-size:1.3rem;font-weight:800;line-height:1;cursor:pointer}
+.linkbox{width:100%;border:0;background:var(--field);border-radius:14px;padding:12px 14px;font-weight:700;font-size:.82rem;color:var(--ink);text-align:left}
+.pill{border:0;border-radius:999px;padding:12px 22px;font-weight:900;cursor:pointer}
+.pill:disabled{opacity:.45;cursor:default}
+.pill.ghost{background:var(--field);color:var(--ink)}
+.pill.go{background:var(--yellow);color:var(--yellow-ink)}
+.actions{display:flex;gap:10px;justify-content:center;width:100%}
+.actions .pill{flex:1;max-width:190px}
+.divider{width:100%;height:1px;background:var(--line);margin-block:6px}
+.namerow{display:flex;gap:8px;width:100%}
+.namerow input{flex:1;min-width:0;border:0;background:var(--field);border-radius:999px;padding:10px 16px;font-weight:700}
+.textbtn{border:0;background:none;color:var(--danger);font-weight:800;cursor:pointer;padding:8px 12px;border-radius:999px}
+.textbtn.armed{background:var(--danger);color:var(--on-color)}
+
+/* First start: connect, name, first group */
+.gate{position:fixed;inset:0;z-index:25;background:var(--yellow);display:grid;place-items:center;overflow-y:auto;padding:max(20px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px))}
+.gate-card{width:100%;max-width:400px;background:var(--panel);color:var(--ink);border-radius:28px;padding:28px 22px 24px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px var(--shadow)}
+.gate-card svg{width:52px;height:52px}
+.gate-card h2{margin:0;font-size:1.5rem;font-weight:900;letter-spacing:-.01em;text-wrap:balance}
+.gate-card p{margin:0;color:var(--muted);font-weight:600}
+.gate-card form{display:flex;flex-direction:column;gap:12px}
+.field{display:flex;flex-direction:column;gap:6px;font-weight:800;font-size:.85rem;text-align:left}
+.field input{border:0;background:var(--field);border-radius:14px;padding:12px 14px;font-weight:700;font-size:1rem;min-width:0}
+
+.main.drop .log{outline:3px dashed var(--yellow);outline-offset:-10px}
+.lightbox{position:fixed;inset:0;z-index:20;background:var(--scrim);display:grid;place-items:center;padding:max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));cursor:zoom-out}
+.lightbox img{max-width:100%;max-height:100%;border-radius:14px;object-fit:contain}
+.lightbox video{max-width:100%;max-height:100%;border-radius:14px;background:var(--tile);cursor:auto}
+.lb-close{position:absolute;top:max(12px, env(safe-area-inset-top, 0px));right:max(12px, env(safe-area-inset-right, 0px));z-index:1;width:40px;height:40px;border-radius:50%;border:0;background:var(--scrim-soft);color:var(--on-color);font-size:1.4rem;font-weight:800;line-height:1;cursor:pointer}
+.toast{position:fixed;z-index:30;left:50%;bottom:calc(84px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 18px;border-radius:999px;font-size:.88rem;font-weight:800;width:max-content;max-width:calc(100% - 32px);text-align:center}
+
+@media (min-width:721px){
+  .sheet-wrap{align-items:center}
+  .sheet{border-radius:28px;padding-block:14px 26px}
+}
+@media (max-width:720px){
+  .app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .rail{flex-direction:row;align-items:center;gap:10px;background:var(--yellow);border-right:0;overflow-x:auto;overflow-y:hidden;padding-block:10px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+  .brand{padding:0;font-size:1.1rem}
+  .brand span{display:none}
+  .rail-body{display:contents}
+  .rail .label,.online,.rail .hint,.faces{display:none}
+  .channels{flex-direction:row;gap:6px}
+  .channels button,.channels button:hover{background:var(--chip);color:var(--chip-ink);border-radius:999px;padding:4px 12px 4px 4px;gap:8px}
+  .channels button[aria-current="true"]{background:var(--yellow-ink);color:var(--yellow)}
+  .channels .ch-icon{width:28px;height:28px;font-size:.8rem}
+  .ch-sub{display:none}
+  .count{height:20px;min-width:20px;padding:0 6px}
+  .ch-name{white-space:nowrap}
+  .newch{flex:none;padding:0}
+  .newch input{width:120px;background:var(--chip);color:var(--chip-ink)}
+  .newch button{background:var(--yellow-ink);color:var(--yellow)}
+  .head{gap:10px}
+  .head,.log,.typing,.tray{padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+  .compose{padding-left:max(12px, env(safe-area-inset-left, 0px));padding-right:max(12px, env(safe-area-inset-right, 0px))}
+  .lock{right:max(12px, env(safe-area-inset-right, 0px))}
+}
+@media (prefers-reduced-motion: reduce){
+  .typing i,.eq b,.voice.playing .vplay::after,.sheet,.rec-dot,.rec-hint,.lock{animation:none}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="rail">
+    <div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="3" width="28" height="22" rx="11" fill="currentColor"/><path d="M9 23l-2 7 8-6z" fill="currentColor"/><circle cx="11" cy="14" r="2" fill="var(--yellow)"/><circle cx="16" cy="14" r="2" fill="var(--yellow)"/><circle cx="21" cy="14" r="2" fill="var(--yellow)"/></svg><span>Plauderecke</span></div>
+    <div class="rail-body">
+      <div class="label">Gruppen</div>
+      <ul class="channels" id="groups"></ul>
+      <form class="newch" id="newgroup">
+        <input id="newgroup-name" maxlength="40" placeholder="Neue Gruppe" aria-label="Name für neue Gruppe" autocomplete="off">
+        <button id="newgroup-btn" type="submit" aria-label="Gruppe erstellen" disabled>+</button>
+      </form>
+      <div class="label">Gerade online</div>
+      <div class="online" id="online"></div>
+      <p class="hint">Freunde holst du über „Einladen“ oben in der Gruppe dazu.</p>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="head">
+      <div class="ch-icon" id="head-icon"></div>
+      <div class="head-text">
+        <h1 id="title">Plauderecke</h1>
+        <div class="status" id="status"></div>
+      </div>
+      <div class="faces" id="faces"></div>
+      <button class="invite-btn" id="invite-btn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6.5 7-6.5s7 2.5 7 6.5M19 8v6M16 11h6"/></svg>Einladen</button>
+    </header>
+    <div class="log" id="log" aria-live="polite"></div>
+    <div class="typing" id="typing"></div>
+    <div class="tray" id="tray" hidden></div>
+    <form class="compose" id="compose">
+      <button class="tool" id="cam-btn" type="button" aria-label="Foto oder Video aufnehmen" title="Foto oder Video aufnehmen" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+      <button class="tool" id="gal-btn" type="button" aria-label="Bild oder Video aus der Galerie" title="Bild oder Video aus der Galerie"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-9 9"/></svg></button>
+      <input type="file" id="cam-input" accept="image/*,video/*" capture="environment" hidden>
+      <input type="file" id="gal-input" accept="image/*,video/*" multiple hidden>
+      <textarea id="text" rows="1" maxlength="2000" placeholder="Chat senden" aria-label="Nachricht"></textarea>
+      <div class="recbar" id="recbar" hidden>
+        <button class="rec-trash" id="rec-trash" type="button" aria-label="Aufnahme löschen" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+        <span class="rec-dot"></span>
+        <span class="rec-time" id="rec-time">0:00</span>
+        <div class="rec-wave" id="rec-wave"></div>
+        <span class="rec-hint" id="rec-hint">‹ Wischen zum Abbrechen</span>
+      </div>
+      <button class="send" id="send" type="submit" aria-label="Senden" title="Senden" data-mode="send" disabled>
+        <svg class="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+        <svg class="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+      </button>
+      <div class="lock" id="lock" hidden aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>
+      </div>
+    </form>
+  </main>
+</div>
+
+<div class="sheet-wrap" id="sheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <span class="grab" aria-hidden="true"></span>
+    <button class="x-close" id="sheet-close" type="button" aria-label="Schließen">×</button>
+    <h2 id="sheet-title">Freunde einladen</h2>
+    <p id="sheet-text">Schick diesen Link an deine Freunde. Wer ihn öffnet, kann der Gruppe beitreten.</p>
+    <input class="linkbox" id="invite-link" readonly aria-label="Einladungslink">
+    <div class="actions">
+      <button class="pill go" id="share-btn" type="button">Link teilen</button>
+      <button class="pill ghost" id="copy-btn" type="button">Kopieren</button>
+    </div>
+    <div class="divider"></div>
+    <form class="namerow" id="name-form">
+      <input id="my-name" maxlength="30" aria-label="Dein Name" placeholder="Dein Name" autocomplete="off">
+      <button class="pill ghost" type="submit">Name speichern</button>
+    </form>
+    <button class="textbtn" id="leave-btn" type="button">Gruppe verlassen</button>
+  </div>
+</div>
+
+<div class="gate" id="gate" hidden>
+  <div class="gate-card">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="3" width="28" height="22" rx="11" fill="var(--ink)"/><path d="M9 23l-2 7 8-6z" fill="var(--ink)"/><circle cx="11" cy="14" r="2" fill="var(--yellow)"/><circle cx="16" cy="14" r="2" fill="var(--yellow)"/><circle cx="21" cy="14" r="2" fill="var(--yellow)"/></svg>
+    <h2 id="gate-title"></h2>
+    <p id="gate-text"></p>
+    <form id="gate-form"></form>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" hidden><button class="lb-close" id="lb-close" type="button" aria-label="Schließen">×</button><img id="lightbox-img" alt="Bild in voller Größe" hidden><video id="lightbox-video" controls playsinline hidden></video></div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(() => {
+  'use strict';
+
+  // Optional: die Supabase-Werte hier fest eintragen. Bleiben sie leer, fragt die Seite beim
+  // ersten Öffnen danach und gibt sie mit jedem Einladungslink an deine Freunde weiter.
+  const CONFIG = { url: '', key: '' };
+
+  const $ = id => document.getElementById(id);
+  const PLAY = '<svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>';
+  const PAUSE = '<svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1.2" fill="currentColor"/><rect x="13.5" y="5" width="4" height="14" rx="1.2" fill="currentColor"/></svg>';
+  const EMPTY = '<div class="empty"><div class="bigicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4.2A8 8 0 1 1 20 12z"/></svg></div><b>Noch keine Nachrichten</b>Schreib etwas, schick ein Foto oder halte den Mikrofon-Knopf gedrückt und sprich. Über „Einladen“ holst du Freunde dazu.</div>';
+  const LOADING = '<div class="empty"><b>Lädt …</b></div>';
+  const PATH_RE = /^[0-9a-f-]{36}\/[0-9a-z-]{8,40}\.[a-z0-9]{2,5}$/;
+  const MAX_FILE = 50 * 1048576;
+
+  const store = {
+    get(k){ try { return localStorage.getItem(k) || ''; } catch { return ''; } },
+    set(k, v){ try { localStorage.setItem(k, v); } catch {} },
+    del(k){ try { localStorage.removeItem(k); } catch {} },
+  };
+  const toast = msg => { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 4000); };
+  const colorFor = id => { let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return `var(--p${h % 5 + 1})`; };
+  const initial = s => (String(s || '').trim().charAt(0) || '?').toUpperCase();
+  const fmtTime = ts => new Date(ts).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  const fmtDur = s => { s = Math.max(0, Math.round(s || 0)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+  const uuid = () => (crypto.randomUUID ? crypto.randomUUID()
+    : [...crypto.getRandomValues(new Uint8Array(16))].map((b, i) => ([4, 6, 8, 10].includes(i) ? '-' : '') + b.toString(16).padStart(2, '0')).join(''));
+  function fmtDay(ts){
+    const d = new Date(ts), today = new Date(); today.setHours(0, 0, 0, 0);
+    const diff = Math.round((today - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5);
+    if (diff === 0) return 'Heute';
+    if (diff === 1) return 'Gestern';
+    return d.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+  }
+  function linkify(el, text){
+    const re = /https?:\/\/[^\s<>"]+/g; let last = 0, m;
+    while ((m = re.exec(text))){
+      el.append(text.slice(last, m.index));
+      const a = document.createElement('a'); a.href = m[0]; a.target = '_blank'; a.rel = 'noopener'; a.textContent = m[0];
+      el.append(a); last = m.index + m[0].length;
+    }
+    el.append(text.slice(last));
+  }
+  function avatar(uid, name, cls = 'av'){
+    const el = document.createElement('span'); el.className = cls;
+    el.style.background = uid === me ? 'var(--me)' : colorFor(uid); el.textContent = initial(name);
+    return el;
+  }
+
+  // ---------- State ----------
+  let sb = null, me = null, myName = store.get('name');
+  let groups = new Map(), names = new Map(), unread = new Map();
+  let current = null, msgs = [], room = null, renderSeq = 0;
+  let pending = [], sending = false, stick = true, typingTimer = null;
+  const presenceState = { typing: false, rec: false };
+  const picCache = new Map(), voiceCache = new Map(), videoCache = new Map();
+  const nameOf = (gid, uid) => names.get(gid + ':' + uid) || '';
+  const mediaUrl = path => sb.storage.from('media').getPublicUrl(path).data.publicUrl;
+
+  // ---------- Config: baked in, from an invite link, or typed in once ----------
+  const baked = !!(CONFIG.url && CONFIG.key);
+  const b64e = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const b64d = s => decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/'))));
+  const validCfg = (u, k) => typeof u === 'string' && /^https:\/\/[^\s/]+\/?$/i.test(u.trim()) && typeof k === 'string' && k.trim().length > 20 && !/\s/.test(k.trim());
+  function loadConfig(fromLink){
+    if (baked) return { url: CONFIG.url, key: CONFIG.key };
+    if (fromLink){
+      try { const c = JSON.parse(b64d(fromLink)); if (validCfg(c.u, c.k)){ const cfg = { url: c.u, key: c.k }; store.set('cfg', JSON.stringify(cfg)); return cfg; } } catch {}
+    }
+    try { const c = JSON.parse(store.get('cfg') || 'null'); if (c && validCfg(c.url, c.key)) return c; } catch {}
+    return null;
+  }
+  let cfg = null;
+  function inviteLink(g){
+    let hash = 'join=' + encodeURIComponent(g.invite_code);
+    if (!baked) hash += '&cfg=' + b64e(JSON.stringify({ u: cfg.url, k: cfg.key }));
+    return location.origin + location.pathname + '#' + hash;
+  }
+
+  // ---------- Full-screen steps on first start ----------
+  function ask({ title, text, fields = [], button, extra }){
+    return new Promise(resolve => {
+      $('gate').hidden = false;
+      $('gate-title').textContent = title; $('gate-text').textContent = text || '';
+      const form = $('gate-form'); form.replaceChildren();
+      for (const f of fields){
+        const label = document.createElement('label'); label.className = 'field';
+        const span = document.createElement('span'); span.textContent = f.label;
+        const input = document.createElement('input');
+        Object.assign(input, { id: 'gate-' + f.id, value: f.value || '', placeholder: f.placeholder || '', maxLength: f.max || 400, autocomplete: 'off', required: true });
+        input.setAttribute('autocapitalize', f.caps === false ? 'off' : 'sentences');
+        label.append(span, input); form.append(label);
+      }
+      const btn = Object.assign(document.createElement('button'), { className: 'pill go', type: 'submit', textContent: button });
+      form.append(btn);
+      if (extra){
+        const b2 = Object.assign(document.createElement('button'), { className: 'pill ghost', type: 'button', textContent: extra });
+        b2.onclick = () => resolve({ extra: true });
+        form.append(b2);
+      }
+      form.onsubmit = e => {
+        e.preventDefault();
+        const vals = {}; for (const f of fields) vals[f.id] = $('gate-' + f.id).value.trim();
+        btn.disabled = true; btn.textContent = 'Einen Moment …';
+        resolve(vals);
+      };
+      setTimeout(() => (form.querySelector('input') || btn).focus(), 60);
+    });
+  }
+
+  async function boot(){
+    const hash = new URLSearchParams(location.hash.slice(1));
+    const linkCode = hash.get('join');
+    cfg = loadConfig(hash.get('cfg'));
+    if (hash.has('join') || hash.has('cfg')){ try { history.replaceState(null, '', location.pathname + location.search); } catch {} }
+    if (linkCode && /^[a-z0-9]{6,40}$/i.test(linkCode)) store.set('pendingJoin', linkCode);
+
+    while (!cfg){
+      const v = await ask({
+        title: 'Plauderecke verbinden',
+        text: 'Trag die zwei Werte aus deinem Supabase-Projekt ein (Project Settings › API Keys). Das machst nur du einmal. Deine Freunde bekommen sie automatisch mit dem Einladungslink.',
+        fields: [
+          { id: 'url', label: 'Project URL', placeholder: 'https://abcdefgh.supabase.co', caps: false },
+          { id: 'key', label: 'anon public key oder Publishable key', placeholder: 'eyJhbGciOi… oder sb_publishable_…', caps: false },
+        ],
+        button: 'Verbinden',
+      });
+      if (validCfg(v.url, v.key)){ cfg = { url: v.url.trim().replace(/\/$/, ''), key: v.key.trim() }; store.set('cfg', JSON.stringify(cfg)); }
+      else toast('Das passt noch nicht. Die URL beginnt mit https:// und der Key ist eine lange Zeichenkette.');
+    }
+
+    if (typeof window.supabase?.createClient !== 'function'){
+      await ask({ title: 'Keine Verbindung', text: 'Ein Teil der Seite konnte nicht laden. Prüf deine Internetverbindung.', button: 'Neu laden' });
+      return location.reload();
+    }
+    sb = window.supabase.createClient(cfg.url, cfg.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
+
+    try { me = await signIn(); }
+    catch (err){
+      const off = /anonymous/i.test(err?.message || '') || err?.code === 'anonymous_provider_disabled';
+      const v = await ask({
+        title: off ? 'Anonyme Anmeldung ist aus' : 'Verbindung klappt nicht',
+        text: off ? 'Schalte in Supabase unter Authentication › Sign In / Providers die Option „Allow anonymous sign-ins“ ein und speichere. Dann tippe auf „Nochmal versuchen“.'
+                  : 'Supabase antwortet nicht. Prüf deine Internetverbindung und ob Project URL und Key stimmen.',
+        button: 'Nochmal versuchen', extra: baked ? null : 'Werte neu eingeben',
+      });
+      if (v.extra) store.del('cfg');
+      return location.reload();
+    }
+
+    while (!myName){
+      const invited = !!store.get('pendingJoin');
+      const v = await ask({
+        title: invited ? 'Du wurdest eingeladen' : 'Willkommen bei Plauderecke',
+        text: 'Wie sollen dich deine Freunde nennen?',
+        fields: [{ id: 'name', label: 'Dein Name', placeholder: 'z. B. Lenox', max: 30 }],
+        button: 'Weiter',
+      });
+      if (v.name){ myName = v.name.slice(0, 30); store.set('name', myName); }
+    }
+
+    let openId = null, created = false;
+    const code = store.get('pendingJoin');
+    if (code) openId = await joinGroup(code);
+    try { await loadGroups(); }
+    catch {
+      await ask({ title: 'Verbindung klappt nicht', text: 'Die Gruppen konnten nicht geladen werden. Hast du das Skript setup.sql in Supabase ausgeführt?', button: 'Nochmal versuchen' });
+      return location.reload();
+    }
+    while (!groups.size){
+      const v = await ask({
+        title: 'Erstelle deine erste Gruppe',
+        text: 'Danach bekommst du einen Link, mit dem deine Freunde beitreten. Hat dir jemand einen Einladungslink geschickt? Dann öffne einfach den.',
+        fields: [{ id: 'group', label: 'Name der Gruppe', placeholder: 'z. B. Coole Boys', max: 40 }],
+        button: 'Gruppe erstellen',
+      });
+      if (v.group){ openId = await createGroup(v.group); created = !!openId; }
+    }
+    $('gate').hidden = true;
+    renderGroups();
+    startFeed();
+    const last = store.get('lastGroup');
+    await openGroup(openId && groups.has(openId) ? openId : groups.has(last) ? last : [...groups.keys()][0]);
+    if (created) openSheet();
+  }
+
+  async function signIn(){
+    const { data } = await sb.auth.getSession();
+    if (data?.session?.user?.id) return data.session.user.id;
+    const res = await sb.auth.signInAnonymously();
+    if (res.error) throw res.error;
+    return res.data.user.id;
+  }
+
+  // ---------- Groups ----------
+  const one = data => Array.isArray(data) ? data[0] : data;
+  async function joinGroup(code){
+    const { data, error } = await sb.rpc('join_group', { code, my_name: myName });
+    store.del('pendingJoin');
+    if (error || !one(data)){ toast(/not found/i.test(error?.message || '') ? 'Dieser Einladungslink ist ungültig.' : 'Beitreten hat nicht geklappt. Öffne den Link nochmal.'); return null; }
+    const g = one(data);
+    groups.set(g.id, g); names.set(g.id + ':' + me, myName);
+    toast(`Du bist jetzt in der Gruppe „${g.name}“.`);
+    return g.id;
+  }
+  async function createGroup(name){
+    const { data, error } = await sb.rpc('create_group', { group_name: name.slice(0, 40), my_name: myName });
+    if (error || !one(data)){ toast('Die Gruppe konnte nicht erstellt werden.'); return null; }
+    const g = one(data);
+    groups.set(g.id, g); names.set(g.id + ':' + me, myName);
+    return g.id;
+  }
+  async function loadGroups(){
+    const [gs, ms] = await Promise.all([
+      sb.from('groups').select('id,name,invite_code,created_at').order('created_at'),
+      sb.from('members').select('group_id,user_id,name'),
+    ]);
+    if (gs.error) throw gs.error;
+    groups = new Map((gs.data || []).map(g => [g.id, g]));
+    names = new Map((ms.data || []).map(m => [m.group_id + ':' + m.user_id, m.name]));
+    renderGroups();
+  }
+
+  function chIcon(id, name){
+    const el = document.createElement('span'); el.className = 'ch-icon';
+    el.style.background = colorFor(id); el.textContent = initial(name);
+    return el;
+  }
+  function renderGroups(){
+    const ul = $('groups'); ul.replaceChildren();
+    for (const g of [...groups.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'))){
+      const li = document.createElement('li'), b = document.createElement('button');
+      b.type = 'button'; b.setAttribute('aria-current', g.id === current ? 'true' : 'false');
+      const n = unread.get(g.id) || 0;
+      const txt = document.createElement('span'); txt.className = 'ch-text';
+      const nm = Object.assign(document.createElement('span'), { className: 'ch-name', textContent: g.name });
+      const sub = Object.assign(document.createElement('span'), { className: 'ch-sub' + (n ? ' new' : ''), textContent: n ? (n === 1 ? '1 neue Nachricht' : `${n} neue Nachrichten`) : g.id === current ? 'Gerade offen' : 'Gruppe' });
+      txt.append(nm, sub);
+      b.append(chIcon(g.id, g.name), txt);
+      if (n) b.append(Object.assign(document.createElement('span'), { className: 'count', textContent: n > 99 ? '99+' : n }));
+      b.onclick = () => openGroup(g.id);
+      li.append(b); ul.append(li);
+    }
+    const total = [...unread.values()].reduce((a, b) => a + b, 0);
+    document.title = total ? `(${total}) Plauderecke` : 'Plauderecke';
+  }
+
+  async function openGroup(gid){
+    if (!gid || !groups.has(gid)) return;
+    if (current) store.set('draft:' + current, $('text').value);
+    setPresence({ typing: false });
+    stopVoice();
+    current = gid; store.set('lastGroup', gid); unread.delete(gid);
+    renderGroups();
+    const g = groups.get(gid);
+    $('title').textContent = g.name;
+    const hi = $('head-icon'); hi.style.background = colorFor(gid); hi.textContent = initial(g.name);
+    $('text').value = store.get('draft:' + gid); autosize(); updateSend();
+    msgs = []; renderLog.first = true; $('log').innerHTML = LOADING;
+    joinRoom(gid);
+    await loadMessages(gid);
+  }
+
+  const norm = r => ({
+    id: r.id, gid: r.group_id, by: r.user_id, kind: r.kind,
+    at: Date.parse(r.created_at) || Date.now(),
+    text: typeof r.text === 'string' ? r.text : '',
+    media: r.media && typeof r.media === 'object' ? r.media : {},
+  });
+  async function loadMessages(gid){
+    const { data, error } = await sb.from('messages').select('*').eq('group_id', gid).order('created_at', { ascending: false }).limit(200);
+    if (gid !== current) return;
+    if (error){ $('log').innerHTML = EMPTY; toast('Die Nachrichten konnten nicht geladen werden.'); return; }
+    msgs = (data || []).map(norm).reverse();
+    renderLog();
+  }
+
+  // ---------- Live updates ----------
+  function startFeed(){
+    let first = true;
+    sb.channel('feed')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => onInsert(p.new))
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, p => onDelete(p.old))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'members' }, onMember)
+      .subscribe(status => {
+        if (status === 'SUBSCRIBED'){ if (!first) resync(); first = false; }
+      });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') resync(); });
+  }
+  let resyncing = false;
+  async function resync(){
+    if (resyncing || !sb) return;
+    resyncing = true;
+    try {
+      await loadGroups();
+      if (current && !groups.has(current)) await openGroup([...groups.keys()][0]);
+      else if (current) await loadMessages(current);
+    } catch {} finally { resyncing = false; }
+  }
+  function onInsert(row){
+    if (!row || !groups.has(row.group_id)) return;
+    if (row.group_id === current){
+      if (!msgs.some(m => m.id === row.id)){ msgs.push(norm(row)); msgs.sort((a, b) => a.at - b.at); renderLog(); }
+    } else if (row.user_id !== me){
+      unread.set(row.group_id, (unread.get(row.group_id) || 0) + 1); renderGroups();
+    }
+  }
+  function onDelete(old){
+    if (!old?.id) return;
+    const n = msgs.length; msgs = msgs.filter(m => m.id !== old.id);
+    if (msgs.length !== n) renderLog();
+  }
+  function onMember(p){
+    const row = p.eventType === 'DELETE' ? p.old : p.new;
+    if (!row?.group_id) return;
+    if (p.eventType === 'DELETE') names.delete(row.group_id + ':' + row.user_id);
+    else names.set(row.group_id + ':' + row.user_id, row.name);
+    if (row.group_id === current){ renderLog(); renderPeople(); }
+  }
+
+  // Who is in the open group right now, and who is typing or recording
+  function joinRoom(gid){
+    if (room){ sb.removeChannel(room); room = null; }
+    const ch = sb.channel('room:' + gid, { config: { presence: { key: me } } });
+    ch.on('presence', { event: 'sync' }, () => { if (room === ch) renderPeople(); });
+    ch.subscribe(status => { if (status === 'SUBSCRIBED' && room === ch) ch.track({ name: myName, ...presenceState }); });
+    room = ch; renderPeople();
+  }
+  function setPresence(patch){
+    let changed = false;
+    for (const k in patch) if (presenceState[k] !== patch[k]){ presenceState[k] = patch[k]; changed = true; }
+    if (changed && room) Promise.resolve(room.track({ name: myName, ...presenceState })).catch(() => {});
+  }
+  function renderPeople(){
+    const state = room ? room.presenceState() : {};
+    const people = Object.entries(state).map(([uid, metas]) => ({
+      uid, isMe: uid === me,
+      name: nameOf(current, uid) || (typeof metas[0]?.name === 'string' ? metas[0].name : '') || 'Jemand',
+      typing: metas.some(x => x.typing === true), rec: metas.some(x => x.rec === true),
+    })).sort((a, b) => a.isMe - b.isMe);
+    const on = $('online'), faces = $('faces'); on.replaceChildren(); faces.replaceChildren();
+    const others = people.filter(p => !p.isMe);
+    if (!others.length) on.innerHTML = '<p class="hint">Niemand sonst ist gerade da.</p>';
+    for (const p of people){
+      const row = document.createElement('div'); row.className = 'person';
+      const label = document.createElement('span'); label.textContent = p.isMe ? `${myName} (du)` : p.name;
+      row.append(avatar(p.uid, p.isMe ? myName : p.name), label); on.append(row);
+      if (!p.isMe && faces.children.length < 5) faces.append(avatar(p.uid, p.name));
+    }
+    const recs = others.filter(p => p.rec).map(p => p.name), typers = others.filter(p => p.typing && !p.rec).map(p => p.name);
+    const ty = $('typing'); ty.replaceChildren();
+    if (recs.length){
+      const eq = document.createElement('span'); eq.className = 'eq';
+      for (let i = 0; i < 4; i++) eq.append(document.createElement('b'));
+      ty.append(eq, recs.length === 1 ? `${recs[0]} nimmt eine Sprachnachricht auf …` : `${recs.length} nehmen Sprachnachrichten auf …`);
+    } else if (typers.length){
+      ty.append(document.createElement('i'), document.createElement('i'), document.createElement('i'));
+      ty.append(typers.length === 1 ? `${typers[0]} tippt …` : typers.length === 2 ? `${typers[0]} und ${typers[1]} tippen …` : 'Mehrere tippen …');
+    }
+    if (!sending) $('status').textContent = others.length ? `${others.length + 1} online` : 'Nur du bist gerade da';
+  }
+
+  // ---------- Messages ----------
+  function renderLog(){
+    const log = $('log');
+    if (!msgs.length){ log.innerHTML = EMPTY; return; }
+    const frag = document.createDocumentFragment();
+    let lastDay = '', grp = null, prev = null;
+    for (const m of msgs){
+      const day = fmtDay(m.at);
+      if (day !== lastDay){ frag.append(Object.assign(document.createElement('div'), { className: 'day', textContent: day })); lastDay = day; prev = null; }
+      const own = m.by === me;
+      if (!prev || prev.by !== m.by || m.at - prev.at > 5 * 60e3){
+        grp = document.createElement('div'); grp.className = 'grp';
+        grp.style.setProperty('--c', own ? 'var(--me)' : colorFor(m.by));
+        const who = document.createElement('div'); who.className = 'who';
+        const nm = document.createElement('span'); nm.textContent = own ? 'Ich' : (nameOf(m.gid, m.by) || 'Jemand');
+        const t = document.createElement('time'); t.textContent = fmtTime(m.at);
+        who.append(nm, t); grp.append(who); frag.append(grp);
+      }
+      const b = document.createElement('div'); b.className = 'bubble'; b.title = fmtTime(m.at);
+      const md = m.media;
+      if (m.kind === 'audio' && PATH_RE.test(md.path || '')) b.append(voiceEl(m, own));
+      else if (m.kind === 'video' && PATH_RE.test(md.path || '')) b.append(videoEl(m));
+      else if (m.kind === 'image' && Array.isArray(md.paths)){
+        const paths = md.paths.filter(p => PATH_RE.test(p)).slice(0, 4);
+        const pics = document.createElement('div'); pics.className = 'pics' + (paths.length === 1 ? ' one' : '');
+        for (const p of paths) pics.append(picButton(p));
+        b.append(pics);
+      }
+      if (m.text){
+        if (b.childNodes.length){ const cap = document.createElement('div'); linkify(cap, m.text); b.append(cap); }
+        else linkify(b, m.text);
+      }
+      if (!b.childNodes.length) continue;
+      if (own){
+        const del = document.createElement('button'); del.type = 'button'; del.className = 'del'; del.textContent = 'Löschen';
+        del.onclick = async () => {
+          if (!del.classList.contains('armed')){ del.classList.add('armed'); del.textContent = 'Wirklich?'; setTimeout(() => { del.classList.remove('armed'); del.textContent = 'Löschen'; }, 3000); return; }
+          if (playing?.id === m.id) stopVoice();
+          const { error } = await sb.from('messages').delete().eq('id', m.id);
+          if (error){ toast('Löschen hat nicht geklappt. Versuch es gleich noch mal.'); return; }
+          onDelete({ id: m.id });
+          const files = [md.path, md.poster, ...(Array.isArray(md.paths) ? md.paths : [])].filter(p => typeof p === 'string' && PATH_RE.test(p));
+          if (files.length) sb.storage.from('media').remove(files).catch(() => {});
+        };
+        // On phones there is no hover: tapping your own message shows its delete button
+        b.addEventListener('click', e => { if (!e.target.closest('a,.pics,.del,.voice,.vid')) b.classList.toggle('show'); });
+        b.append(del);
+      }
+      grp.append(b); prev = m;
+    }
+    log.replaceChildren(frag);
+    if (stick || renderLog.first){ log.scrollTop = log.scrollHeight; stick = true; renderLog.first = false; }
+  }
+  $('log').addEventListener('scroll', () => { const l = $('log'); stick = l.scrollHeight - l.scrollTop - l.clientHeight < 120; });
+
+  function picButton(path){
+    if (picCache.has(path)) return picCache.get(path);
+    const btn = document.createElement('button'); btn.type = 'button'; btn.setAttribute('aria-label', 'Bild groß anzeigen');
+    const img = document.createElement('img'); img.alt = 'Bild'; img.src = mediaUrl(path);
+    img.onload = () => { if (stick) $('log').scrollTop = $('log').scrollHeight; };
+    img.onerror = () => { const gone = Object.assign(document.createElement('div'), { className: 'gone', textContent: 'Bild nicht verfügbar' }); picCache.set(path, gone); btn.replaceWith(gone); };
+    btn.onclick = () => openImage(img.src);
+    btn.append(img); picCache.set(path, btn);
+    return btn;
+  }
+
+  function videoEl(m){
+    if (videoCache.has(m.id)) return videoCache.get(m.id);
+    const md = m.media, w = Number(md.w) || 0, h = Number(md.h) || 0, dur = Number(md.dur) || 0;
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'vid'; btn.setAttribute('aria-label', 'Video abspielen');
+    btn.style.width = (w && h && w > h ? 280 : 190) + 'px';
+    btn.style.aspectRatio = w && h ? `${w} / ${h}` : '9 / 16';
+    const poster = PATH_RE.test(md.poster || '') ? mediaUrl(md.poster) : '';
+    if (poster){ const img = document.createElement('img'); img.alt = ''; img.src = poster; img.onerror = () => img.remove(); btn.append(img); }
+    const play = document.createElement('span'); play.className = 'vid-play'; play.innerHTML = PLAY;
+    btn.append(play);
+    if (dur) btn.append(Object.assign(document.createElement('span'), { className: 'vid-dur', textContent: fmtDur(dur) }));
+    btn.onclick = () => openVideo(mediaUrl(md.path), poster);
+    videoCache.set(m.id, btn);
+    return btn;
+  }
+
+  // ---------- Viewer for photos and videos ----------
+  const lb = $('lightbox'), lbImg = $('lightbox-img'), lbVid = $('lightbox-video');
+  function openImage(src){ lbVid.hidden = true; lbImg.hidden = false; lbImg.src = src; lb.hidden = false; }
+  function openVideo(src, poster){
+    stopVoice();
+    lbImg.hidden = true; lbVid.hidden = false; lb.hidden = false;
+    if (poster) lbVid.poster = poster; else lbVid.removeAttribute('poster');
+    lbVid.src = src; lbVid.play().catch(() => {});
+  }
+  function closeLightbox(){ lb.hidden = true; lbVid.pause(); lbVid.removeAttribute('src'); lbVid.load(); }
+  lbVid.addEventListener('error', () => { if (!lb.hidden && !lbVid.hidden && lbVid.getAttribute('src')) toast('Dieses Video lässt sich hier nicht abspielen.'); });
+  lb.addEventListener('click', e => { if (e.target === lb || e.target === lbImg) closeLightbox(); });
+  $('lb-close').onclick = closeLightbox;
+
+  // ---------- Voice messages: playback ----------
+  let actx = null;
+  function getCtx(){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    try { if (!actx) actx = new AC(); } catch { return null; }
+    if (actx.state === 'suspended') actx.resume().catch(() => {});
+    return actx;
+  }
+  function resample(p, n){
+    if (!p.length) return Array.from({ length: n }, (_, i) => Math.round((0.3 + 0.3 * Math.abs(Math.sin(i * 1.7))) * 100) / 100);
+    return Array.from({ length: n }, (_, i) => {
+      const a = Math.floor(i * p.length / n), b = Math.max(a + 1, Math.floor((i + 1) * p.length / n));
+      return Math.max(...p.slice(a, b));
+    });
+  }
+  function bars(el, peaks){
+    el.replaceChildren(...peaks.map(h => { const b = document.createElement('i'); b.style.setProperty('--h', h); return b; }));
+  }
+  function paintBars(el, p, live){
+    const list = el.children, k = Math.floor(p * list.length);
+    for (let i = 0; i < list.length; i++){ list[i].classList.toggle('on', i < k); list[i].classList.toggle('now', live && i === k); }
+  }
+  let speed = parseFloat(store.get('speed')) || 1;
+  if (![1, 1.5, 2].includes(speed)) speed = 1;
+  const speedLabel = () => (speed === 1.5 ? '1,5' : String(speed)) + '×';
+  const player = new Audio(); player.preload = 'auto';
+  let playing = null, raf = 0;
+  const curDur = () => (isFinite(player.duration) && player.duration > 0) ? player.duration : (playing ? playing.dur : 0);
+
+  function voiceEl(m, own){
+    if (voiceCache.has(m.id)) return voiceCache.get(m.id);
+    const md = m.media, dur = Number(md.dur) || 0;
+    const peaks = Array.isArray(md.peaks) ? md.peaks.slice(0, 64).map(x => typeof x === 'number' && isFinite(x) ? Math.min(1, Math.max(0.06, x)) : 0.2) : [];
+    const a = { id: m.id, path: md.path, dur };
+    const el = document.createElement('div'); el.className = 'voice';
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'vplay';
+    btn.setAttribute('aria-label', 'Sprachnachricht abspielen'); btn.innerHTML = PLAY + PAUSE;
+    const wave = document.createElement('div'); wave.className = 'vbars'; bars(wave, resample(peaks, 28));
+    const t = Object.assign(document.createElement('span'), { className: 'vt', textContent: fmtDur(dur) });
+    const dot = Object.assign(document.createElement('span'), { className: 'vdot', title: 'Noch nicht angehört' });
+    dot.hidden = own || !!store.get('heard:' + m.id);
+    const sp = Object.assign(document.createElement('button'), { type: 'button', className: 'vspeed', textContent: speedLabel() });
+    sp.setAttribute('aria-label', 'Abspielgeschwindigkeit ändern');
+    btn.onclick = () => togglePlay(a, el);
+    wave.onclick = e => {
+      if (playing?.id !== a.id) return togglePlay(a, el);
+      const r = wave.getBoundingClientRect(), d = curDur();
+      if (d) player.currentTime = Math.min(d - 0.05, Math.max(0, (e.clientX - r.left) / r.width * d));
+      tick();
+    };
+    sp.onclick = () => {
+      speed = speed === 1 ? 1.5 : speed === 1.5 ? 2 : 1;
+      store.set('speed', String(speed)); player.playbackRate = speed; player.defaultPlaybackRate = speed;
+      document.querySelectorAll('.vspeed').forEach(s => s.textContent = speedLabel());
+    };
+    el.append(btn, wave, t, dot, sp);
+    voiceCache.set(m.id, el);
+    return el;
+  }
+  function togglePlay(a, el){
+    if (playing && playing.id === a.id){
+      if (player.paused){ el.classList.add('playing'); player.play().catch(() => el.classList.remove('playing')); }
+      else player.pause();
+      return;
+    }
+    stopVoice();
+    playing = { ...a, el };
+    el.classList.add('playing');
+    player.src = mediaUrl(a.path);
+    player.defaultPlaybackRate = speed; player.playbackRate = speed;
+    player.play().catch(err => { if (err?.name !== 'AbortError'){ el.classList.remove('playing'); if (err?.name !== 'NotAllowedError') toast('Diese Sprachnachricht lässt sich hier nicht abspielen.'); } });
+    store.set('heard:' + a.id, '1');
+    el.querySelector('.vdot').hidden = true;
+  }
+  function stopVoice(){
+    if (!playing) return;
+    const p = playing; playing = null;
+    player.pause(); cancelAnimationFrame(raf);
+    p.el.classList.remove('playing');
+    paintBars(p.el.querySelector('.vbars'), 0, false);
+    p.el.querySelector('.vt').textContent = fmtDur(p.dur);
+  }
+  function tick(){
+    if (!playing) return;
+    const d = curDur();
+    paintBars(playing.el.querySelector('.vbars'), d ? Math.min(1, player.currentTime / d) : 0, !player.paused);
+    playing.el.querySelector('.vt').textContent = fmtDur(player.currentTime);
+    if (!player.paused) raf = requestAnimationFrame(tick);
+  }
+  player.addEventListener('play', () => { player.playbackRate = speed; if (playing) playing.el.classList.add('playing'); cancelAnimationFrame(raf); raf = requestAnimationFrame(tick); });
+  player.addEventListener('pause', () => { if (playing){ playing.el.classList.remove('playing'); tick(); } });
+  player.addEventListener('ended', () => stopVoice());
+
+  // ---------- Voice messages: hold to record ----------
+  // Hold the mic: record. Slide left: cancel. Slide up: lock, then tap the button to send.
+  const REC_TYPES = ['audio/mp4;codecs=mp4a.40.2', 'audio/webm;codecs=opus', 'audio/mp4', 'audio/webm', 'audio/ogg;codecs=opus'];
+  const REC_BARS = 40, MAX_REC = 300;
+  const rec = { state: 'idle', stream: null, recorder: null, chunks: [], start: 0, levels: [], live: [], smooth: 0, raf: 0, lastPush: 0, x0: 0, y0: 0, cancel: false, pointer: null, analyser: null, src: null, sink: null };
+  bars($('rec-wave'), Array(REC_BARS).fill(0.08));
+
+  async function startRecording(){
+    if (typeof MediaRecorder === 'undefined' || !navigator.mediaDevices?.getUserMedia){ toast('Dein Browser kann hier keine Sprachnachrichten aufnehmen.'); return; }
+    const ctx = getCtx(); // wake the audio engine while the finger is still down
+    rec.state = 'starting'; rec.cancel = false; showRecUI(true);
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }); }
+    catch (err){
+      rec.state = 'idle'; showRecUI(false);
+      toast(err?.name === 'NotAllowedError' ? 'Erlaube den Zugriff aufs Mikrofon, dann klappt es. Das geht in den Browser-Einstellungen dieser Seite.' : 'Es wurde kein Mikrofon gefunden.');
+      return;
+    }
+    if (rec.state !== 'starting'){ // the finger let go while the browser was asking for permission
+      stream.getTracks().forEach(t => t.stop());
+      rec.state = 'idle';
+      toast('Das Mikrofon ist bereit. Halte den Knopf gedrückt, solange du sprichst.');
+      return;
+    }
+    const mime = REC_TYPES.find(t => MediaRecorder.isTypeSupported(t)) || '';
+    let recorder;
+    try { recorder = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 64000 } : undefined); }
+    catch { stream.getTracks().forEach(t => t.stop()); rec.state = 'idle'; showRecUI(false); toast('Aufnehmen klappt in diesem Browser leider nicht.'); return; }
+    Object.assign(rec, { stream, recorder, chunks: [], levels: [], live: Array(REC_BARS).fill(0.08), smooth: 0, lastPush: 0 });
+    recorder.ondataavailable = e => { if (e.data && e.data.size) rec.chunks.push(e.data); };
+    recorder.start(250);
+    if (ctx){
+      try {
+        rec.src = ctx.createMediaStreamSource(stream);
+        rec.analyser = ctx.createAnalyser(); rec.analyser.fftSize = 1024;
+        rec.sink = ctx.createGain(); rec.sink.gain.value = 0; // keeps the meter running without playing anything back
+        rec.src.connect(rec.analyser); rec.analyser.connect(rec.sink); rec.sink.connect(ctx.destination);
+      } catch { rec.analyser = null; }
+    }
+    rec.start = performance.now(); rec.state = rec.locked ? 'locked' : 'recording';
+    if (navigator.vibrate) navigator.vibrate(18);
+    setPresence({ rec: true, typing: false });
+    meter();
+  }
+
+  function meter(){
+    if (rec.state !== 'recording' && rec.state !== 'locked') return;
+    const now = performance.now(), secs = (now - rec.start) / 1000;
+    let lvl = 0;
+    if (rec.analyser){
+      const buf = new Uint8Array(rec.analyser.fftSize); rec.analyser.getByteTimeDomainData(buf);
+      let sum = 0; for (let i = 0; i < buf.length; i++){ const x = (buf[i] - 128) / 128; sum += x * x; }
+      lvl = Math.min(1, Math.sqrt(sum / buf.length) * 5);
+    } else lvl = 0.25 + 0.2 * Math.sin(now / 160);
+    rec.smooth = rec.smooth * 0.65 + lvl * 0.35;
+    $('send').style.setProperty('--lvl', rec.smooth.toFixed(3));
+    if (now - rec.lastPush > 70){
+      rec.lastPush = now; rec.levels.push(rec.smooth);
+      rec.live.push(Math.max(0.08, rec.smooth)); rec.live.shift();
+      const list = $('rec-wave').children;
+      for (let i = 0; i < list.length; i++) list[i].style.setProperty('--h', rec.live[i].toFixed(2));
+    }
+    $('rec-time').textContent = fmtDur(Math.floor(secs));
+    if (secs >= MAX_REC){ finishRecording(true); return; }
+    rec.raf = requestAnimationFrame(meter);
+  }
+
+  async function finishRecording(send){
+    if (rec.state === 'starting'){ rec.state = 'aborted'; showRecUI(false); return; }
+    if (rec.state !== 'recording' && rec.state !== 'locked') return;
+    const dur = (performance.now() - rec.start) / 1000;
+    rec.state = 'stopping';
+    cancelAnimationFrame(rec.raf);
+    const r = rec.recorder;
+    const stopped = new Promise(res => { r.onstop = res; });
+    try { r.stop(); } catch {}
+    await Promise.race([stopped, new Promise(res => setTimeout(res, 1500))]);
+    rec.stream.getTracks().forEach(t => t.stop());
+    try { rec.src?.disconnect(); rec.analyser?.disconnect(); rec.sink?.disconnect(); } catch {}
+    rec.state = 'idle';
+    showRecUI(false);
+    setPresence({ rec: false });
+    if (!send){ toast('Aufnahme gelöscht.'); return; }
+    if (dur < 0.8){ toast('Halte den Knopf gedrückt, solange du sprichst.'); return; }
+    const type = (r.mimeType || 'audio/webm').split(';')[0];
+    const blob = new Blob(rec.chunks, { type });
+    if (!blob.size){ toast('Die Aufnahme war leer. Versuch es nochmal.'); return; }
+    const max = Math.max(...rec.levels, 0.05);
+    const peaks = resample(rec.levels.length ? rec.levels : [0.2], 40).map(v => Math.round(Math.max(0.08, Math.min(1, v / max)) * 100) / 100);
+    sendVoice(blob, type, dur, peaks);
+  }
+
+  function showRecUI(on){
+    const c = $('compose'), bar = $('recbar'), btn = $('send');
+    c.classList.toggle('recording', on);
+    bar.hidden = !on; bar.classList.remove('cancel', 'locked');
+    $('rec-trash').hidden = true; $('rec-hint').hidden = false;
+    $('rec-hint').style.transform = ''; $('rec-hint').textContent = '‹ Wischen zum Abbrechen';
+    $('lock').hidden = !on; $('lock').classList.remove('near');
+    btn.classList.toggle('rec', on);
+    btn.style.removeProperty('--lvl');
+    if (on){ $('rec-time').textContent = '0:00'; bars($('rec-wave'), Array(REC_BARS).fill(0.08)); }
+    rec.locked = false;
+    updateSend();
+  }
+
+  function lockRecording(){
+    rec.locked = true;
+    if (rec.state === 'recording') rec.state = 'locked';
+    $('recbar').classList.add('locked'); $('recbar').classList.remove('cancel');
+    $('rec-trash').hidden = false; $('rec-hint').hidden = true; $('lock').hidden = true;
+    $('send').dataset.mode = 'send'; $('send').setAttribute('aria-label', 'Sprachnachricht senden');
+    if (navigator.vibrate) navigator.vibrate(12);
+  }
+
+  const sendBtn = $('send');
+  sendBtn.addEventListener('pointerdown', e => {
+    if (sendBtn.dataset.mode !== 'mic' || sendBtn.disabled || rec.state !== 'idle') return;
+    if (sending){ toast('Einen Moment, es wird noch gesendet.'); return; }
+    e.preventDefault();
+    rec.pointer = e.pointerId; rec.x0 = e.clientX; rec.y0 = e.clientY;
+    try { sendBtn.setPointerCapture(e.pointerId); } catch {}
+    startRecording();
+  });
+  sendBtn.addEventListener('pointermove', e => {
+    if (e.pointerId !== rec.pointer || rec.locked || (rec.state !== 'recording' && rec.state !== 'starting')) return;
+    const dx = Math.min(0, e.clientX - rec.x0), dy = e.clientY - rec.y0;
+    rec.cancel = dx < -90;
+    $('rec-hint').style.transform = `translateX(${Math.max(dx, -120)}px)`;
+    $('recbar').classList.toggle('cancel', rec.cancel);
+    $('rec-hint').textContent = rec.cancel ? 'Loslassen zum Löschen' : '‹ Wischen zum Abbrechen';
+    $('lock').classList.toggle('near', dy < -35);
+    if (dy < -70 && !rec.cancel) lockRecording();
+  });
+  sendBtn.addEventListener('pointerup', e => {
+    if (e.pointerId !== rec.pointer) return;
+    rec.pointer = null;
+    if (!rec.locked) finishRecording(!rec.cancel);
+  });
+  sendBtn.addEventListener('pointercancel', e => {
+    if (e.pointerId !== rec.pointer) return;
+    rec.pointer = null;
+    if (!rec.locked) finishRecording(false);
+  });
+  sendBtn.addEventListener('contextmenu', e => e.preventDefault());
+  sendBtn.addEventListener('click', e => {
+    if (rec.locked && (rec.state === 'locked' || rec.state === 'recording')){ e.preventDefault(); finishRecording(true); return; }
+    if (sendBtn.dataset.mode === 'mic') e.preventDefault();
+  });
+  $('rec-trash').onclick = () => finishRecording(false);
+
+  async function sendVoice(blob, type, dur, peaks){
+    const gid = current;
+    sending = true; updateSend(); $('status').textContent = 'Sprachnachricht wird gesendet …';
+    let path = null;
+    try {
+      path = await upload(gid, blob, type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm', type);
+      await insertMessage(gid, { kind: 'audio', text: '', media: { path, dur: Math.round(dur * 10) / 10, peaks } });
+    } catch (err){
+      if (path) sb.storage.from('media').remove([path]).catch(() => {});
+      toast(errText(err, 'Die Sprachnachricht konnte nicht gesendet werden. Versuch es nochmal.'));
+    } finally {
+      sending = false; updateSend(); renderPeople();
+    }
+  }
+
+  // ---------- Upload helpers ----------
+  async function upload(gid, blob, ext, type){
+    if (blob.size > MAX_FILE) throw { code: 'too_large' };
+    const path = `${gid}/${uuid()}.${ext}`;
+    const { error } = await sb.storage.from('media').upload(path, blob, { contentType: type, cacheControl: '31536000', upsert: false });
+    if (error) throw error;
+    return path;
+  }
+  async function insertMessage(gid, fields){
+    const { data, error } = await sb.from('messages').insert({ group_id: gid, ...fields }).select().single();
+    if (error) throw error;
+    stick = true; onInsert(data);
+    return data;
+  }
+  function errText(err, fallback){
+    const msg = String(err?.message || err?.error || '');
+    if (err?.code === 'too_large' || /413|too large|maximum allowed size/i.test(msg) || String(err?.statusCode) === '413') return 'Die Datei ist zu groß. Höchstens 50 MB gehen.';
+    if (err?.code === 'video_convert') return 'Dieses Video konnte nicht verkleinert werden. Versuch ein kürzeres Video und lass die Seite dabei offen.';
+    if (/row-level security|violates/i.test(msg)) return 'Du bist nicht mehr in dieser Gruppe.';
+    if (/fetch|network|load failed/i.test(msg)) return 'Keine Verbindung. Prüf dein Internet und versuch es nochmal.';
+    return fallback;
+  }
+
+  // ---------- Photos and videos ----------
+  const OK_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+  async function shrink(file){
+    if (file.type === 'image/gif') return file;
+    try {
+      const bmp = await createImageBitmap(file);
+      const s = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(bmp.width * s)); c.height = Math.max(1, Math.round(bmp.height * s));
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+      g.drawImage(bmp, 0, 0, c.width, c.height); if (bmp.close) bmp.close();
+      const out = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85));
+      if (out && (out.size < file.size || !OK_TYPES.includes(file.type))) return out;
+    } catch {}
+    return file;
+  }
+  const extOf = type => ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp' })[type] || 'jpg';
+
+  function addFiles(list){
+    if (sending || rec.state !== 'idle') return;
+    for (const f of list){
+      const kind = f.type.startsWith('image/') ? 'image'
+        : (f.type.startsWith('video/') || /\.(mp4|mov|m4v|webm|3gp)$/i.test(f.name || '')) ? 'video' : null;
+      if (!kind){ toast(f.type.startsWith('audio/') ? 'Sprachnachrichten nimmst du direkt mit dem Mikrofon-Knopf auf.' : 'Du kannst Bilder und Videos schicken.'); continue; }
+      if (pending.length >= 4){ toast('Höchstens 4 Bilder oder Videos auf einmal.'); break; }
+      const p = { kind, file: f, url: URL.createObjectURL(f) };
+      pending.push(p);
+      if (kind === 'video') prepareVideo(p);
+    }
+    renderTray(); updateSend();
+  }
+  function renderTray(){
+    const tray = $('tray'); tray.replaceChildren(); tray.hidden = !pending.length;
+    tray.classList.toggle('busy', sending);
+    for (const p of pending){
+      const t = document.createElement('div'); t.className = 'thumb' + (p.kind === 'video' ? ' is-video' : '');
+      const src = p.kind === 'video' ? p.posterUrl : p.url;
+      if (src){ const img = document.createElement('img'); img.src = src; img.alt = p.kind === 'video' ? 'Ausgewähltes Video' : 'Ausgewähltes Bild'; t.append(img); }
+      if (p.kind === 'video'){
+        const badge = document.createElement('span'); badge.className = 'badge'; badge.innerHTML = PLAY;
+        badge.append(p.ready ? (p.dur ? fmtDur(p.dur) : 'Video') : 'Lädt …');
+        t.append(badge);
+        p.progEl = null;
+        if (sending){ p.progEl = Object.assign(document.createElement('span'), { className: 'prog', textContent: '…' }); t.append(p.progEl); }
+      }
+      const x = document.createElement('button'); x.type = 'button'; x.textContent = '×'; x.disabled = sending;
+      x.setAttribute('aria-label', p.kind === 'video' ? 'Video entfernen' : 'Bild entfernen');
+      x.onclick = () => { pending = pending.filter(q => q !== p); dropItem(p); renderTray(); updateSend(); };
+      t.append(x); tray.append(t);
+    }
+  }
+  function dropItem(p){
+    URL.revokeObjectURL(p.url);
+    if (p.posterUrl) URL.revokeObjectURL(p.posterUrl);
+    if (p.el){ p.el.pause(); p.el.removeAttribute('src'); p.el.load(); }
+    if (p.node){ try { p.node.disconnect(); } catch {} }
+  }
+
+  const waitFor = (el, ev, ms) => new Promise((res, rej) => {
+    const done = () => { clearTimeout(t); el.removeEventListener(ev, ok); el.removeEventListener('error', bad); };
+    const ok = () => { done(); res(); }, bad = () => { done(); rej(new Error('error')); };
+    const t = setTimeout(() => { done(); rej(new Error('timeout')); }, ms);
+    el.addEventListener(ev, ok); el.addEventListener('error', bad);
+  });
+
+  // Load the picked video once to learn its length and size and to cut a still frame for the preview
+  async function prepareVideo(p){
+    const v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.preload = 'auto';
+    p.el = v;
+    try {
+      const meta = waitFor(v, 'loadedmetadata', 15000);
+      v.src = p.url;
+      await meta;
+      p.w = v.videoWidth; p.h = v.videoHeight;
+      p.dur = isFinite(v.duration) ? v.duration : 0;
+      if (!p.w || !p.h) throw new Error('no picture');
+      p.poster = await grabPoster(v);
+      if (p.poster) p.posterUrl = URL.createObjectURL(p.poster);
+      p.ready = true;
+    } catch {
+      if (pending.includes(p)){ pending = pending.filter(q => q !== p); dropItem(p); toast('Dieses Video kann dein Browser nicht öffnen.'); }
+    }
+    renderTray(); updateSend();
+  }
+  async function grabPoster(v){
+    try { await v.play(); v.pause(); } catch {} // iPhones only paint a frame once playback has started
+    try {
+      const seek = waitFor(v, 'seeked', 5000);
+      v.currentTime = Math.min(0.3, (v.duration || 1) / 2);
+      await seek;
+      const s = Math.min(1, 480 / Math.max(v.videoWidth, v.videoHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(v.videoWidth * s)); c.height = Math.max(1, Math.round(v.videoHeight * s));
+      c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+      return await new Promise(r => c.toBlob(r, 'image/jpeg', 0.75));
+    } catch { return null; }
+  }
+  // Runs inside the send tap: routes each video's sound into the recorder instead of the speakers and
+  // starts it once, so the browser allows playing it with sound later while it gets shrunk
+  function unlockVideos(items){
+    const ctx = getCtx();
+    for (const p of items){
+      if (p.kind !== 'video' || !p.el || p.node || !ctx) continue;
+      try {
+        p.node = ctx.createMediaElementSource(p.el);
+        p.dest = ctx.createMediaStreamDestination();
+        p.node.connect(p.dest);
+        p.el.muted = false;
+        p.unlocking = p.el.play().then(() => { if (!p.compressing) p.el.pause(); }).catch(() => {});
+      } catch {}
+    }
+  }
+  function hasTag(b, s){
+    const c0 = s.charCodeAt(0), c1 = s.charCodeAt(1), c2 = s.charCodeAt(2), c3 = s.charCodeAt(3);
+    for (let i = 0; i + 3 < b.length; i++) if (b[i] === c0 && b[i + 1] === c1 && b[i + 2] === c2 && b[i + 3] === c3) return true;
+    return false;
+  }
+  // Small H.264 MP4/MOV or WebM files go up as they are; everything else is shrunk first
+  async function videoForUpload(p, onProgress){
+    const info = { dur: p.dur, w: p.w, h: p.h };
+    if (p.file.size <= 25 * 1048576 && (!p.dur || p.dur <= 61)){
+      const bytes = new Uint8Array(await p.file.arrayBuffer());
+      const head = String.fromCharCode(...bytes.subarray(0, 64));
+      if (head.slice(4, 8) === 'ftyp' && hasTag(bytes, 'avc1') && !hasTag(bytes, 'hvc1') && !hasTag(bytes, 'hev1'))
+        return { ...info, blob: p.file, type: 'video/mp4', ext: 'mp4' };
+      if (bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3 && head.includes('webm'))
+        return { ...info, blob: p.file, type: 'video/webm', ext: 'webm' };
+    }
+    toast(p.dur > 61 ? 'Videos dürfen höchstens 60 Sekunden lang sein. Die ersten 60 Sekunden werden geschickt.' : 'Das Video wird verkleinert. Lass die Seite so lange offen.');
+    return compressVideo(p, onProgress);
+  }
+  // The video plays silently into a canvas at most 720p and is recorded again in real time,
+  // so a 30 second clip takes about 30 seconds
+  async function compressVideo(p, onProgress){
+    const mime = typeof MediaRecorder !== 'undefined' && typeof HTMLCanvasElement.prototype.captureStream === 'function' &&
+      ['video/mp4;codecs=avc1,mp4a.40.2', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'].find(t => MediaRecorder.isTypeSupported(t));
+    if (!mime) throw { code: 'video_convert' };
+    p.compressing = true;
+    await p.unlocking;
+    const v = p.el, limit = Math.min(p.dur || 60, 60);
+    const s = Math.min(1, 720 / Math.max(p.w, p.h));
+    const w = Math.max(2, Math.round(p.w * s / 2) * 2), h = Math.max(2, Math.round(p.h * s / 2) * 2);
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const g = c.getContext('2d');
+    v.pause();
+    const seek = waitFor(v, 'seeked', 5000).catch(() => {});
+    v.currentTime = 0; await seek;
+    g.drawImage(v, 0, 0, w, h);
+    const stream = c.captureStream(30);
+    const sound = p.dest && p.dest.stream.getAudioTracks()[0];
+    if (sound) stream.addTrack(sound);
+    const vbr = Math.max(400000, Math.min(1500000, Math.round(40 * 8 * 1048576 / limit * 0.8) - 96000));
+    const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: vbr, audioBitsPerSecond: 96000 });
+    const chunks = [];
+    recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    const stopped = new Promise(r => recorder.onstop = r);
+    let finish, running = true, last = -1, still = 0;
+    const ended = new Promise(r => finish = r);
+    const next = () => v.requestVideoFrameCallback ? v.requestVideoFrameCallback(frame) : requestAnimationFrame(frame);
+    const frame = () => {
+      if (!running) return;
+      g.drawImage(v, 0, 0, w, h);
+      onProgress(Math.min(1, v.currentTime / limit));
+      if (v.currentTime >= limit || v.ended) finish(); else next();
+    };
+    v.onended = () => finish();
+    const guard = setInterval(() => {
+      if (v.currentTime !== last){ last = v.currentTime; still = 0; } else if (++still >= 3) finish('stalled');
+    }, 5000);
+    recorder.start(1000);
+    try { await v.play(); }
+    catch { v.muted = true; await v.play().catch(() => finish('blocked')); }
+    next();
+    const problem = await ended;
+    running = false; clearInterval(guard); v.onended = null; v.pause();
+    recorder.stop(); await stopped;
+    if (problem || !chunks.length) throw { code: 'video_convert' };
+    const webm = mime.startsWith('video/webm');
+    const type = webm ? 'video/webm' : 'video/mp4';
+    return { blob: new Blob(chunks, { type }), type, ext: webm ? 'webm' : 'mp4', dur: Math.min(limit, v.currentTime || limit), w, h };
+  }
+
+  // ---------- Composer ----------
+  function autosize(){ const t = $('text'); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 160) + 'px'; }
+  // The round button is a mic while the field is empty and turns into the send arrow once there is something to send
+  function updateSend(){
+    if (rec.locked) return;
+    const has = !!$('text').value.trim() || pending.length > 0;
+    const mic = !has, b = $('send'), label = mic ? 'Gedrückt halten für Sprachnachricht' : 'Senden';
+    b.dataset.mode = mic ? 'mic' : 'send';
+    b.setAttribute('aria-label', label); b.title = label;
+    b.disabled = !current || (sending && !mic) || (!mic && !has);
+  }
+  function setTyping(on){ setPresence({ typing: on }); }
+
+  $('text').addEventListener('input', () => {
+    autosize(); updateSend(); if (current) store.set('draft:' + current, $('text').value);
+    setTyping(!!$('text').value.trim());
+    clearTimeout(typingTimer); typingTimer = setTimeout(() => setTyping(false), 3000);
+  });
+  $('text').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !matchMedia('(pointer: coarse)').matches){ e.preventDefault(); $('compose').requestSubmit(); }
+  });
+  $('text').addEventListener('paste', e => {
+    const files = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
+    if (files.length){ e.preventDefault(); addFiles(files); }
+  });
+  $('cam-btn').hidden = !matchMedia('(pointer: coarse)').matches;
+  $('cam-btn').onclick = () => $('cam-input').click();
+  $('gal-btn').onclick = () => $('gal-input').click();
+  for (const id of ['cam-input', 'gal-input']) $(id).addEventListener('change', e => { addFiles([...e.target.files]); e.target.value = ''; });
+  const main = document.querySelector('.main');
+  main.addEventListener('dragover', e => { if (e.dataTransfer?.types.includes('Files')){ e.preventDefault(); main.classList.add('drop'); } });
+  main.addEventListener('dragleave', e => { if (!main.contains(e.relatedTarget)) main.classList.remove('drop'); });
+  main.addEventListener('drop', e => { main.classList.remove('drop'); if (e.dataTransfer?.files.length){ e.preventDefault(); addFiles([...e.dataTransfer.files]); } });
+
+  $('compose').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (rec.state !== 'idle') return;
+    const box = $('text'), text = box.value.trim(), items = pending.slice(), gid = current;
+    if ((!text && !items.length) || !gid || sending) return;
+    if (items.some(p => p.kind === 'video' && !p.ready)){ toast('Das Video lädt noch. Einen Moment.'); return; }
+    unlockVideos(items);
+    sending = true; setTyping(false);
+    box.value = ''; store.set('draft:' + gid, ''); autosize();
+    renderTray(); updateSend();
+    const images = items.filter(p => p.kind === 'image'), videos = items.filter(p => p.kind === 'video');
+    let paths = [], textSent = false;
+    try {
+      // Each video becomes its own message; the text rides along with the pictures, or with the last video
+      for (const [i, p] of videos.entries()){
+        const caption = !images.length && i === videos.length - 1 ? text : '';
+        const progress = pct => {
+          const label = `${Math.round(pct * 100)} %`;
+          if (p.progEl) p.progEl.textContent = label;
+          $('status').textContent = `Video wird verkleinert … ${label}`;
+        };
+        paths = [];
+        $('status').textContent = 'Video wird vorbereitet …';
+        const vid = await videoForUpload(p, progress);
+        $('status').textContent = 'Video wird gesendet …';
+        const path = await upload(gid, vid.blob, vid.ext, vid.type); paths.push(path);
+        let poster = null;
+        if (p.poster){ try { poster = await upload(gid, p.poster, 'jpg', 'image/jpeg'); paths.push(poster); } catch {} }
+        await insertMessage(gid, { kind: 'video', text: caption, media: { path, poster, dur: Math.round((vid.dur || 0) * 10) / 10, w: vid.w, h: vid.h } });
+        paths = []; if (caption) textSent = true;
+        pending = pending.filter(q => q !== p); dropItem(p); renderTray();
+      }
+      if (images.length || (text && !textSent)){
+        if (images.length) $('status').textContent = images.length === 1 ? 'Bild wird gesendet …' : `${images.length} Bilder werden gesendet …`;
+        for (const p of images){
+          const blob = await shrink(p.file);
+          const type = blob.type || 'image/jpeg';
+          paths.push(await upload(gid, blob, extOf(type), type));
+        }
+        await insertMessage(gid, images.length ? { kind: 'image', text, media: { paths } } : { kind: 'text', text });
+        paths = []; textSent = true;
+        pending = pending.filter(q => !images.includes(q)); images.forEach(dropItem);
+      }
+    } catch (err){
+      if (paths.length) sb.storage.from('media').remove(paths).catch(() => {});
+      if (current === gid && text && !textSent && !box.value){ box.value = text; autosize(); }
+      toast(errText(err, 'Senden hat nicht geklappt. Deine Nachricht ist noch da.'));
+    } finally {
+      sending = false; renderTray(); updateSend(); renderPeople();
+    }
+  });
+
+  // ---------- New group, invite sheet, name, leaving ----------
+  $('newgroup-name').addEventListener('input', () => $('newgroup-btn').disabled = !$('newgroup-name').value.trim());
+  $('newgroup').addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = $('newgroup-name').value.trim();
+    if (!name || !sb) return;
+    $('newgroup-btn').disabled = true;
+    const id = await createGroup(name);
+    if (!id) return;
+    $('newgroup-name').value = '';
+    renderGroups(); await openGroup(id); openSheet();
+  });
+
+  function openSheet(){
+    const g = groups.get(current); if (!g) return;
+    $('sheet-title').textContent = 'Freunde einladen';
+    $('sheet-text').textContent = `Schick diesen Link an deine Freunde. Wer ihn öffnet, kann „${g.name}“ beitreten.`;
+    $('invite-link').value = inviteLink(g);
+    $('share-btn').hidden = !navigator.share;
+    $('my-name').value = myName;
+    const leave = $('leave-btn'); leave.classList.remove('armed'); leave.textContent = 'Gruppe verlassen';
+    $('sheet').hidden = false;
+  }
+  const closeSheet = () => { $('sheet').hidden = true; };
+  $('invite-btn').onclick = openSheet;
+  $('sheet-close').onclick = closeSheet;
+  $('sheet').addEventListener('click', e => { if (e.target === $('sheet')) closeSheet(); });
+  $('share-btn').onclick = async () => {
+    const g = groups.get(current); if (!g) return;
+    try { await navigator.share({ title: 'Plauderecke', text: `Komm in meine Gruppe „${g.name}“ auf Plauderecke:`, url: $('invite-link').value }); } catch {}
+  };
+  $('copy-btn').onclick = async () => {
+    const box = $('invite-link');
+    try { await navigator.clipboard.writeText(box.value); toast('Link kopiert. Füg ihn in WhatsApp oder so ein.'); }
+    catch { box.focus(); box.select(); toast('Markiert. Jetzt einfach kopieren.'); }
+  };
+  $('name-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = $('my-name').value.trim().slice(0, 30);
+    if (!name || name === myName) return;
+    const { error } = await sb.from('members').update({ name }).eq('user_id', me);
+    if (error){ toast('Der Name konnte nicht gespeichert werden.'); return; }
+    myName = name; store.set('name', name);
+    for (const gid of groups.keys()) names.set(gid + ':' + me, name);
+    setPresence({}); if (room) Promise.resolve(room.track({ name: myName, ...presenceState })).catch(() => {});
+    renderLog(); renderPeople(); toast('Name gespeichert.');
+  });
+  $('leave-btn').onclick = async () => {
+    const btn = $('leave-btn'), gid = current;
+    if (!btn.classList.contains('armed')){ btn.classList.add('armed'); btn.textContent = 'Wirklich verlassen?'; return; }
+    const { error } = await sb.from('members').delete().eq('group_id', gid).eq('user_id', me);
+    if (error){ toast('Verlassen hat nicht geklappt.'); return; }
+    closeSheet();
+    groups.delete(gid); unread.delete(gid);
+    if (groups.size){ renderGroups(); await openGroup([...groups.keys()][0]); }
+    else location.reload();
+  };
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (!lb.hidden) closeLightbox();
+    if (!$('sheet').hidden) closeSheet();
+  });
+  // A second invite link opened in the same tab
+  window.addEventListener('hashchange', async () => {
+    const h = new URLSearchParams(location.hash.slice(1)), code = h.get('join');
+    if (!code || !sb || !me || !myName) return;
+    try { history.replaceState(null, '', location.pathname + location.search); } catch {}
+    const id = await joinGroup(code);
+    if (id){ await loadGroups(); await openGroup(id); }
+  });
+
+  $('log').innerHTML = LOADING;
+  updateSend();
+  boot().catch(async err => {
+    console.error(err);
+    await ask({ title: 'Etwas ist schiefgelaufen', text: 'Lade die Seite neu. Wenn das immer wieder passiert, prüf, ob du setup.sql in Supabase ausgeführt hast.', button: 'Neu laden' });
+    location.reload();
+  });
+})();
+</script>
+</body>
+</html>

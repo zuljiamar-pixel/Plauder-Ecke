@@ -1,0 +1,62 @@
+# Plauderecke online stellen
+
+Du brauchst etwa 20 Minuten und zwei kostenlose Konten: **Supabase** (Datenbank, Speicher, Live-Chat) und **GitHub** (stellt die Website ins Internet). Eine Kreditkarte brauchst du nicht.
+
+In diesem Ordner liegen:
+
+- `index.html`: die Website
+- `setup.sql`: richtet die Datenbank ein
+
+## Teil 1: Supabase einrichten
+
+1. Öffne **supabase.com**, tippe auf **Start your project** und registriere dich.
+2. Tippe auf **New project**.
+   - Name: `plauderecke`
+   - Datenbank-Passwort: irgendein sicheres Passwort, gut aufheben
+   - Region: **Central EU (Frankfurt)**
+
+   Tippe dann auf **Create new project** und warte 1 bis 2 Minuten.
+3. Links im Menü: **SQL Editor**. Kopiere den ganzen Text aus `setup.sql`, füge ihn ein und tippe auf **Run**. Kommt eine Warnung, bestätige mit **Run this query**. Am Ende steht „Success. No rows returned“.
+4. Links: **Authentication**, dann **Sign In / Providers**. Schalte **Allow anonymous sign-ins** ein und tippe auf **Save changes**. Damit können deine Freunde ohne eigenes Konto mitmachen.
+5. Links: **Project Settings** (Zahnrad). Dort brauchst du zwei Werte:
+   - Unter **Data API**: die **Project URL**, zum Beispiel `https://abcdefgh.supabase.co`
+   - Unter **API Keys**: den **Publishable key** (beginnt mit `sb_publishable_`) oder unter „Legacy API Keys“ den **anon public** Key (beginnt mit `eyJ`)
+
+   Den **secret** bzw. **service_role** Key nie verwenden. Der darf alles.
+
+## Teil 2: Website online stellen
+
+**Mit GitHub (geht auch auf dem Handy):**
+
+1. Öffne **github.com** und registriere dich.
+2. Oben rechts auf **+** und dann **New repository**. Name: `plauderecke`, **Public** wählen, **Create repository** tippen.
+3. Auf der neuen Seite **uploading an existing file** antippen, `index.html` auswählen und unten **Commit changes** tippen.
+4. Im Repository: **Settings**, dann links **Pages**. Bei „Source“ **Deploy from a branch** wählen, bei „Branch“ **main** und **/ (root)**, dann **Save**.
+5. Nach 1 bis 2 Minuten steht oben auf der Pages-Seite deine Adresse: `https://DEINNAME.github.io/plauderecke/`
+
+**Am Computer geht es auch so:** **app.netlify.com/drop** öffnen und den Ordner mit `index.html` ins Fenster ziehen. Lege ein kostenloses Netlify-Konto an, damit die Seite bleibt.
+
+## Teil 3: Loslegen
+
+1. Öffne deine Adresse, trag Project URL und Key ein und tippe auf **Verbinden**.
+2. Gib deinen Namen ein und erstelle eine Gruppe.
+3. Tippe auf **Einladen** und dann auf **Link teilen** oder **Kopieren**. Schick den Link zum Beispiel per WhatsApp. Deine Freunde öffnen ihn, geben ihren Namen ein und sind drin.
+
+Tipp: Im Browser-Menü **Zum Home-Bildschirm** wählen. Dann sieht Plauderecke aus wie eine App.
+
+## So funktioniert's
+
+- **Sprachnachricht:** Den gelben Mikrofon-Knopf gedrückt halten und sprechen. Beim Loslassen wird sie gesendet.
+  - **Nach links wischen:** Die Aufnahme wird gelöscht.
+  - **Nach oben wischen:** Die Aufnahme läuft ohne Festhalten weiter. Zum Senden auf den Knopf tippen.
+  - Beim ersten Mal fragt der Browser nach dem Mikrofon. Erlauben.
+- **Fotos und Videos:** Über die Knöpfe links neben dem Textfeld. Große Videos werden vorher verkleinert. Dabei die Seite offen lassen.
+- **Mehrere Gruppen:** Links bzw. oben eine neue Gruppe anlegen. Jede Gruppe hat ihren eigenen Einladungslink.
+
+## Gut zu wissen
+
+- Supabase gratis: 1 GB für Fotos, Videos und Sprachnachrichten, einzelne Dateien bis 50 MB. Für eine Freundesgruppe reicht das lange.
+- Benutzt eine Woche lang niemand den Chat, pausiert Supabase das kostenlose Projekt. Dann im Supabase-Dashboard auf **Restore project** tippen.
+- Wer den Einladungslink hat, kann beitreten. Schick ihn nur an Leute, die dabei sein sollen.
+- Wer die Browserdaten löscht oder ein neues Handy nimmt, öffnet einfach den Einladungslink nochmal.
+- Die Nachrichten aus dem alten claude.ai-Chat kommen nicht mit.
