@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#fffc00">
+<meta name="color-scheme" content="light dark">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Plauderecke">
@@ -454,7 +455,8 @@ img{max-width:100%}
         ],
         button: 'Verbinden',
       });
-      if (validCfg(v.url, v.key)){ cfg = { url: v.url.trim().replace(/\/$/, ''), key: v.key.trim() }; store.set('cfg', JSON.stringify(cfg)); }
+      if (/github\.io|netlify\.app/i.test(v.url) || v.url.includes(location.host)) toast('Das ist die Adresse deiner Website. Hier gehört die Project URL aus Supabase hin, sie endet auf .supabase.co');
+      else if (validCfg(v.url, v.key)){ cfg = { url: v.url.trim().replace(/\/$/, ''), key: v.key.trim() }; store.set('cfg', JSON.stringify(cfg)); }
       else toast('Das passt noch nicht. Die URL beginnt mit https:// und der Key ist eine lange Zeichenkette.');
     }
 
