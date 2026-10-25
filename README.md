@@ -53,6 +53,20 @@ Tipp: Im Browser-Menü **Zum Home-Bildschirm** wählen. Dann sieht Plauderecke a
 - **Fotos und Videos:** Über die Knöpfe links neben dem Textfeld. Große Videos werden vorher verkleinert. Dabei die Seite offen lassen.
 - **Mehrere Gruppen:** Links bzw. oben eine neue Gruppe anlegen. Jede Gruppe hat ihren eigenen Einladungslink.
 
+## Benachrichtigungen einrichten
+
+Damit Handys Bescheid bekommen, wenn jemand schreibt, auch wenn Plauderecke zu ist:
+
+1. Im Supabase **SQL Editor** den ganzen Text aus `push.sql` einfügen und **Run** tippen. Unten erscheint dann „Benachrichtigungen sind eingerichtet“.
+2. In Supabase **Edge Functions** öffnen, **Deploy a new function** und dann **Via Editor** wählen.
+   - Name: genau `notify`
+   - Den Beispiel-Code löschen und den ganzen Text aus `supabase/functions/notify/index.ts` einfügen
+   - **Deploy function** tippen
+3. Bei der Funktion `notify` unter **Details** die Option **Verify JWT** ausschalten und speichern. Die Funktion prüft selbst, ob ein Aufruf von deiner Datenbank kommt.
+4. Auf der Website auf **Einschalten** tippen (oder unter **Einladen** › **Benachrichtigungen einschalten**) und erlauben. Das macht jeder auf seinem eigenen Handy.
+
+Auf dem iPhone gehen Benachrichtigungen nur, wenn Plauderecke über Teilen › **Zum Home-Bildschirm** hinzugefügt und von dort geöffnet wird.
+
 ## Gut zu wissen
 
 - Supabase gratis: 1 GB für Fotos, Videos und Sprachnachrichten, einzelne Dateien bis 50 MB. Für eine Freundesgruppe reicht das lange.

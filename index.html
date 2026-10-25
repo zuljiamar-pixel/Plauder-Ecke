@@ -10,6 +10,8 @@
 <meta name="apple-mobile-web-app-title" content="Plauderecke">
 <title>Plauderecke</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23fffc00'/%3E%3Crect x='5' y='6' width='22' height='16' rx='8' fill='%2316161a'/%3E%3Cpath d='M10 20l-2 6 7-5z' fill='%2316161a'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
@@ -74,6 +76,12 @@ img{max-width:100%}
 .invite-btn{flex:none;border:0;background:var(--yellow);color:var(--yellow-ink);border-radius:999px;padding:8px 14px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:6px}
 .invite-btn svg{width:18px;height:18px}
 
+.pushbar{display:flex;align-items:center;gap:10px;padding-block:9px;padding-left:20px;padding-right:max(14px, env(safe-area-inset-right, 0px));background:var(--field);border-bottom:1px solid var(--line);font-weight:700;font-size:.88rem}
+.pushbar svg{flex:none;width:20px;height:20px}
+.pushbar span{flex:1;min-width:0}
+.pushbar .pill{flex:none;padding:7px 14px;font-size:.85rem}
+.pushbar .x{flex:none;width:30px;height:30px;border:0;background:none;color:var(--muted);font-size:1.25rem;font-weight:800;cursor:pointer}
+.pushrow{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
 .log{flex:1;overflow-y:auto;padding-block:12px 8px;padding-left:20px;padding-right:max(20px, env(safe-area-inset-right, 0px));display:flex;flex-direction:column;min-height:0;overscroll-behavior:contain}
 .day{align-self:center;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:14px 0 2px;font-weight:800}
 .grp{display:flex;flex-direction:column;gap:2px;margin-top:12px}
@@ -231,6 +239,7 @@ img{max-width:100%}
   .newch button{background:var(--yellow-ink);color:var(--yellow)}
   .head{gap:10px}
   .head,.log,.typing,.tray{padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+  .pushbar{padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(10px, env(safe-area-inset-right, 0px))}
   .compose{padding-left:max(12px, env(safe-area-inset-left, 0px));padding-right:max(12px, env(safe-area-inset-right, 0px))}
   .lock{right:max(12px, env(safe-area-inset-right, 0px))}
 }
@@ -267,6 +276,12 @@ img{max-width:100%}
       <div class="faces" id="faces"></div>
       <button class="invite-btn" id="invite-btn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6.5 7-6.5s7 2.5 7 6.5M19 8v6M16 11h6"/></svg>Einladen</button>
     </header>
+    <div class="pushbar" id="pushbar" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      <span id="pushbar-text">Bekomm Bescheid, wenn jemand schreibt.</span>
+      <button class="pill go" id="pushbar-on" type="button">Einschalten</button>
+      <button class="x" id="pushbar-x" type="button" aria-label="Später">×</button>
+    </div>
     <div class="log" id="log" aria-live="polite"></div>
     <div class="typing" id="typing"></div>
     <div class="tray" id="tray" hidden></div>
@@ -305,6 +320,11 @@ img{max-width:100%}
     <div class="actions">
       <button class="pill go" id="share-btn" type="button">Link teilen</button>
       <button class="pill ghost" id="copy-btn" type="button">Kopieren</button>
+    </div>
+    <div class="divider"></div>
+    <div class="pushrow">
+      <button class="pill go" id="push-btn" type="button">Benachrichtigungen einschalten</button>
+      <p id="push-note"></p>
     </div>
     <div class="divider"></div>
     <form class="namerow" id="name-form">
@@ -441,8 +461,9 @@ img{max-width:100%}
   async function boot(){
     const hash = new URLSearchParams(location.hash.slice(1));
     const linkCode = hash.get('join');
+    const linkGroup = hash.get('g');
     cfg = loadConfig(hash.get('cfg'));
-    if (hash.has('join') || hash.has('cfg')){ try { history.replaceState(null, '', location.pathname + location.search); } catch {} }
+    if (hash.has('join') || hash.has('cfg') || hash.has('g')){ try { history.replaceState(null, '', location.pathname + location.search); } catch {} }
     if (linkCode && /^[a-z0-9]{6,40}$/i.test(linkCode)) store.set('pendingJoin', linkCode);
 
     while (!cfg){
@@ -511,8 +532,10 @@ img{max-width:100%}
     $('gate').hidden = true;
     renderGroups();
     startFeed();
+    if (!openId && groups.has(linkGroup)) openId = linkGroup; // tapped on a notification
     const last = store.get('lastGroup');
     await openGroup(openId && groups.has(openId) ? openId : groups.has(last) ? last : [...groups.keys()][0]);
+    initPush();
     if (created) openSheet();
   }
 
@@ -1339,6 +1362,84 @@ img{max-width:100%}
       sending = false; renderTray(); updateSend(); renderPeople();
     }
   });
+
+  // ---------- Notifications on the phone, also when the page is closed ----------
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+  const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  const pushOn = () => pushSupported() && Notification.permission === 'granted' && store.get('push') === '1';
+  const b64uBytes = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), c => c.charCodeAt(0));
+  const bytesB64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+  async function subscribePush(ask){
+    if (!pushSupported()) return 'unsupported';
+    if (Notification.permission === 'denied') return 'denied';
+    if (Notification.permission !== 'granted'){
+      if (!ask) return 'off';
+      const p = await Notification.requestPermission();
+      if (p !== 'granted') return p === 'denied' ? 'denied' : 'off';
+    }
+    const reg = await navigator.serviceWorker.register('sw.js');
+    await navigator.serviceWorker.ready;
+    const r = await fetch(cfg.url + '/functions/v1/notify');
+    const key = r.ok ? (await r.json()).publicKey : null;
+    if (!key) throw new Error('server not ready');
+    let sub = await reg.pushManager.getSubscription();
+    if (sub && sub.options?.applicationServerKey && bytesB64u(sub.options.applicationServerKey) !== key){ await sub.unsubscribe(); sub = null; }
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uBytes(key) });
+    const j = sub.toJSON();
+    const { error } = await sb.rpc('save_push_subscription', { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth });
+    if (error) throw error;
+    store.set('push', '1');
+    return 'on';
+  }
+  async function unsubscribePush(){
+    store.del('push');
+    const reg = await navigator.serviceWorker.getRegistration();
+    const sub = await reg?.pushManager.getSubscription();
+    if (sub){ await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint); await sub.unsubscribe(); }
+  }
+  async function togglePush(){
+    try {
+      if (pushOn()){ await unsubscribePush(); toast('Benachrichtigungen sind aus.'); }
+      else {
+        const r = await subscribePush(true);
+        if (r === 'on') toast('Benachrichtigungen sind an. Du bekommst Bescheid, wenn jemand schreibt.');
+        else if (r === 'denied') toast('Benachrichtigungen sind blockiert. Erlaube sie in den Einstellungen dieser Website.');
+      }
+    } catch (err){
+      console.error(err);
+      toast(/server not ready|Failed to fetch|NetworkError|Load failed/i.test(String(err?.message)) ? 'Benachrichtigungen sind auf dem Server noch nicht fertig eingerichtet.' : 'Benachrichtigungen einschalten hat nicht geklappt.');
+    }
+    renderPushUI();
+  }
+  function renderPushUI(){
+    const btn = $('push-btn'), note = $('push-note'), bar = $('pushbar');
+    if (!pushSupported()){
+      btn.hidden = true;
+      note.textContent = isIOS ? 'Für Benachrichtigungen auf dem iPhone: in Safari auf Teilen › „Zum Home-Bildschirm“ tippen und Plauderecke dann von dort öffnen.' : 'Dieser Browser kann keine Benachrichtigungen anzeigen.';
+      bar.hidden = !isIOS || !!store.get('pushbar-x');
+      $('pushbar-text').textContent = 'Für Benachrichtigungen: Teilen › „Zum Home-Bildschirm“.';
+      $('pushbar-on').hidden = true;
+      return;
+    }
+    const denied = Notification.permission === 'denied';
+    btn.hidden = denied;
+    btn.textContent = pushOn() ? 'Benachrichtigungen ausschalten' : 'Benachrichtigungen einschalten';
+    btn.className = pushOn() ? 'pill ghost' : 'pill go';
+    note.textContent = denied ? 'Benachrichtigungen sind im Browser blockiert. Erlaube sie in den Einstellungen dieser Website.'
+      : pushOn() ? 'Du bekommst Bescheid, wenn jemand schreibt.' : 'Bekomm Bescheid aufs Handy, wenn jemand schreibt, auch wenn Plauderecke zu ist.';
+    bar.hidden = pushOn() || denied || !!store.get('pushbar-x');
+  }
+  function initPush(){
+    if (pushSupported()){
+      navigator.serviceWorker.addEventListener('message', e => { const g = e.data && e.data.openGroup; if (g && groups.has(g)) openGroup(g); });
+      if (pushOn()) subscribePush(false).catch(() => {}); // keeps the server's copy fresh
+    }
+    renderPushUI();
+  }
+  $('push-btn').onclick = async () => { $('push-btn').disabled = true; await togglePush(); $('push-btn').disabled = false; };
+  $('pushbar-on').onclick = () => togglePush();
+  $('pushbar-x').onclick = () => { store.set('pushbar-x', '1'); $('pushbar').hidden = true; };
 
   // ---------- New group, invite sheet, name, leaving ----------
   $('newgroup-name').addEventListener('input', () => $('newgroup-btn').disabled = !$('newgroup-name').value.trim());
