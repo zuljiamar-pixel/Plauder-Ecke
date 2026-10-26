@@ -119,6 +119,18 @@ Privat schreiben geht nur mit Leuten aus deinen Gruppen. Niemand sonst sieht den
 
 Im Supabase **SQL Editor** den ganzen Text aus `flammen.sql` einfügen und **Run** tippen (braucht vorher `update.sql`). Danach zählt jeder Tag, an dem im Chat mindestens eine Nachricht geschickt wurde.
 
+## Hintergründe, Umfragen, @Erwähnen, Stummschalten, Bearbeiten, Suchen
+
+1. Im Supabase **SQL Editor** den ganzen Text aus `funktionen.sql` einfügen und **Run** tippen. Unten steht dann **Neue Funktionen sind bereit!**
+2. Damit Stummschalten und @Erwähnungen auch bei den Benachrichtigungen wirken: In Supabase **Edge Functions** › deine Funktion (`swift-task`) › **Code** den ganzen Text durch den aus `supabase/functions/notify/index.ts` ersetzen und **Deploy** tippen. (Erst Schritt 1, dann Schritt 2.)
+
+So geht's in der App:
+- **⋯ oben im Chat:** Im Chat suchen, Umfrage starten, Hintergrund ändern, Stummschalten (und Freunde einladen).
+- **+ links unten:** Kamera oder Umfrage.
+- **@ tippen:** Die Namen aus dem Chat erscheinen zum Antippen. `@alle` erwähnt alle. Wer erwähnt wird, sieht seinen Namen gelb und bekommt eine Benachrichtigung, auch wenn der Chat stumm ist.
+- **Eigene Nachricht gedrückt halten › Bearbeiten:** Danach steht „bearbeitet“ dabei.
+- **Hintergrund:** Eine Farbe oder ein eigenes Foto. Alle im Chat sehen den gleichen.
+
 ## Gut zu wissen
 
 - Supabase gratis: 1 GB für Fotos, Videos und Sprachnachrichten, einzelne Dateien bis 50 MB. Für eine Freundesgruppe reicht das lange.

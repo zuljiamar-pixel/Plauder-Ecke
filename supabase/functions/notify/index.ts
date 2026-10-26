@@ -131,17 +131,25 @@ Deno.serve(async (req: Request) => {
     }
     if (req.headers.get('x-plauder-secret') !== cfg.secret) { return new Response('forbidden', { status: 403, headers: cors }); }
     const m = (await req.json()).message;
-    const rows = await db`
-      select s.endpoint, s.p256dh, s.auth, g.name as group_name, coalesce(snd.name, 'Jemand') as sender
-      from public.members mem
-      join public.push_subscriptions s on s.user_id = mem.user_id
-      join public.groups g on g.id = mem.group_id
-      left join public.members snd on snd.group_id = mem.group_id and snd.user_id = ${m.user_id}::uuid
-      where mem.group_id = ${m.group_id}::uuid and mem.user_id <> ${m.user_id}::uuid`;
+    /* Wer was bekommt, entscheidet die Datenbank (funktionen.sql): Stummschalten, @Erwähnungen, private Chats */
+    let rows: any[];
+    try {
+      rows = await db`select endpoint, p256dh, auth, title, body from public.push_targets(${m.group_id}::uuid, ${m.user_id}::uuid, ${m.kind || 'text'}, ${m.text || ''})`;
+    } catch (_e) {
+      /* funktionen.sql ist noch nicht ausgeführt: alle in der Gruppe wie bisher */
+      const old = await db`
+        select s.endpoint, s.p256dh, s.auth, g.name as group_name, coalesce(snd.name, 'Jemand') as sender
+        from public.members mem
+        join public.push_subscriptions s on s.user_id = mem.user_id
+        join public.groups g on g.id = mem.group_id
+        left join public.members snd on snd.group_id = mem.group_id and snd.user_id = ${m.user_id}::uuid
+        where mem.group_id = ${m.group_id}::uuid and mem.user_id <> ${m.user_id}::uuid`;
+      rows = old.map((r: any) => ({ ...r, title: r.group_name, body: (r.sender + ': ' + label(m)).slice(0, 200) }));
+    }
     let sent = 0;
     let removed = 0;
     await Promise.all(rows.map(async (r: any) => {
-      const payload = JSON.stringify({ title: r.group_name, body: (r.sender + ': ' + label(m)).slice(0, 200), group: m.group_id });
+      const payload = JSON.stringify({ title: r.title, body: r.body, group: m.group_id });
       try {
         const status = await sendPush(r, payload, cfg);
         if (status === 404 || status === 410) { await db`delete from public.push_subscriptions where endpoint = ${r.endpoint}`; removed++; }
