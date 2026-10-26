@@ -46,7 +46,7 @@ Tipp: Im Browser-Menü **Zum Home-Bildschirm** wählen. Dann sieht Plauderecke a
 
 ## So funktioniert's
 
-- **Chat-Liste wie bei Snapchat:** Unten die Leiste mit Chats, Kamera und Profil. Bei jeder Gruppe steht, was zuletzt passiert ist (zum Beispiel „Neues Foto · 5 Min.“ oder „Geöffnet“) und wie viele Tage am Stück ihr geschrieben habt (🔥). ⌛ heißt: Heute hat noch nicht jeder geschrieben, sonst ist die Flamme morgen weg.
+- **Chat-Liste wie bei Snapchat:** Unten die Leiste mit Chats, Kamera und Profil. Bei jeder Gruppe steht, was zuletzt passiert ist (zum Beispiel „Neues Foto · 5 Min.“ oder „Geöffnet“) und wie viele Tage am Stück im Chat geschrieben wurde (🔥). Dafür reicht 1 Nachricht pro Tag. ⌛ heißt: Heute kam noch nichts, sonst ist die Flamme morgen weg.
   - **Chat gedrückt halten:** Anheften 📌, als gelesen markieren, Snap schicken, Freunde einladen.
   - **Gelber Knopf unten rechts oder Person mit +:** Neue Gruppe machen oder mit einem eingefügten Link beitreten.
 - **Kamera:** Tippen für ein Foto, gedrückt halten für ein Video (bis 30 Sekunden). Danach mit **T** oder einem Tipp aufs Bild Text draufschreiben, dann **Senden an** und Gruppen auswählen. Das Kamera-Symbol neben einer Gruppe schickt den Snap direkt dorthin.
@@ -114,6 +114,10 @@ Es wird keine E-Mail gebraucht und nie eine verschickt. Ein vergessenes Passwort
 3. Private Chats stehen in der Chat-Liste mit dem Bild und Namen der Person. Mit dem Filter **💬 Privat** siehst du nur sie.
 
 Privat schreiben geht nur mit Leuten aus deinen Gruppen. Niemand sonst sieht den Chat, auch der Admin nicht. Wer `setup.sql` später nochmal ausführt, sollte danach auch `dm.sql` nochmal ausführen.
+
+## Flammen mit 1 Nachricht pro Tag
+
+Im Supabase **SQL Editor** den ganzen Text aus `flammen.sql` einfügen und **Run** tippen (braucht vorher `update.sql`). Danach zählt jeder Tag, an dem im Chat mindestens eine Nachricht geschickt wurde.
 
 ## Gut zu wissen
 

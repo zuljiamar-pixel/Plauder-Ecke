@@ -1010,12 +1010,18 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     const { data, error } = await sb.rpc('chat_list');
     ovReady = !error && Array.isArray(data);
     if (ovReady){
+      const before = ov;
       ov = new Map();
       for (const r of data){
         if (!groups.has(r.group_id)) continue;
         ov.set(r.group_id, { lastId: r.last_id, lastBy: r.last_by, lastKind: r.last_kind, lastSticker: r.last_sticker === true, lastAt: r.last_at ? Date.parse(r.last_at) : 0, streak: r.streak || 0, streakToday: r.streak_today === true });
         if (r.unread > 0 && !viewing(r.group_id)) unread.set(r.group_id, r.unread); else unread.delete(r.group_id);
+        // My message made the flame grow: cheer
+        const was = before.get(r.group_id), now = ov.get(r.group_id);
+        if (was && now.streakToday && now.streak > (was.streakToday ? was.streak : 0) && now.lastBy === me)
+          toast(now.streak === 1 ? '🔥 Flamme gestartet! Schreib morgen wieder, dann wächst sie.' : `🔥 ${now.streak} Tage am Stück! Morgen wieder schreiben, sonst geht sie aus.`);
       }
+      if (current) renderPeople();
     }
     renderGroups();
   }
@@ -1042,6 +1048,8 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     if (d < 365){ const mo = Math.floor(d / 30); return mo === 1 ? '1 Monat' : `${mo} Monate`; }
     const y = Math.floor(d / 365); return y === 1 ? '1 Jahr' : `${y} Jahre`;
   }
+  // Flame: days in a row with at least one message in the chat; ⌛ = nobody wrote today yet
+  const flame = o => `${o.streak}🔥${o.streakToday ? '' : '⌛'}`;
   const kindOf = o => o.lastSticker ? 'sticker' : (o.lastKind || 'text');
   // A private chat is a group of two; it is called after the other person and shows their picture
   const isDm = g => !!(g && g.is_dm);
@@ -1065,7 +1073,7 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     else { icon = snap ? ICON.snapSeen : ICON.chatSeen; label = 'Empfangen'; }
     el.innerHTML = icon;
     el.append(label, ' · ' + timeAgo(o.lastAt));
-    if (o.streak >= 2) el.append(` · ${o.streak}🔥${o.streakToday ? '' : '⌛'}`);
+    if (o.streak >= 1) el.append(' · ' + flame(o));
     return el;
   }
   function chIcon(id, name){
@@ -1413,7 +1421,8 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
       const add = Object.assign(document.createElement('button'), { type: 'button', className: 'chip add', textContent: '+ Freunde einladen' });
       add.onclick = openSheet; strip.append(add);
     }
-    if (!sending) $('status').textContent = isDm(groups.get(current)) ? (others.length ? 'Gerade da' : 'Privater Chat') : others.length ? `${others.length + 1} online` : 'Nur du bist gerade da';
+    const o = ov.get(current), fl = o && o.streak >= 1 ? ' · ' + flame(o) : '';
+    if (!sending) $('status').textContent = (isDm(groups.get(current)) ? (others.length ? 'Gerade da' : 'Privater Chat') : others.length ? `${others.length + 1} online` : 'Nur du bist gerade da') + fl;
   }
 
   // ---------- Reactions ----------

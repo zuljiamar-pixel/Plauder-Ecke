@@ -67,7 +67,7 @@ do $$ begin
 end $$;
 
 /* ---------- Chat-Liste: letzte Nachricht, Ungelesene und Flammen pro Gruppe in einem Rutsch ---------- */
-/* Flamme: so viele Tage am Stück, an denen mindestens zwei verschiedene Leute in der Gruppe geschrieben haben */
+/* Flamme: so viele Tage am Stück, an denen im Chat mindestens eine Nachricht geschickt wurde */
 create or replace function public.chat_list() returns table (
   group_id uuid, last_id uuid, last_by uuid, last_kind text, last_sticker boolean, last_at timestamptz,
   unread int, streak int, streak_today boolean
@@ -92,7 +92,6 @@ language sql stable security definer set search_path = public as $$
     from public.messages m join mine on mine.group_id = m.group_id
     where m.created_at > now() - interval '400 days'
     group by m.group_id, (m.created_at at time zone 'Europe/Zurich')::date
-    having count(distinct m.user_id) >= 2
   ),
   runs as (
     select days.group_id, days.d, days.d - (row_number() over (partition by days.group_id order by days.d))::int as run from days
