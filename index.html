@@ -65,6 +65,7 @@ img{max-width:100%}
 .av{position:relative;flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--on-color);font-weight:900;font-size:.9rem}
 .person .av::after{content:"";position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:var(--online);border:2px solid var(--rail)}
 .person span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.av img{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
 .hint{font-size:.82rem;color:var(--muted);font-weight:600;padding-left:8px;margin:0}
 
 .main{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--panel)}
@@ -77,6 +78,9 @@ img{max-width:100%}
 .faces .av{width:30px;height:30px;font-size:.78rem;border:2px solid var(--panel);margin-left:-8px}
 .invite-btn{flex:none;border:0;background:var(--yellow);color:var(--yellow-ink);border-radius:999px;padding:8px 14px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:6px}
 .invite-btn svg{width:18px;height:18px}
+.me-btn{position:relative;flex:none;width:38px;height:38px;border-radius:50%;border:0;padding:0;background:none;cursor:pointer}
+.me-btn .av{width:38px;height:38px}
+.me-btn.nopic::after{content:"+";position:absolute;right:-3px;bottom:-3px;width:18px;height:18px;border-radius:50%;background:var(--yellow);color:var(--yellow-ink);border:2px solid var(--panel);font-size:13px;font-weight:900;line-height:14px;text-align:center}
 
 .pushbar{display:flex;align-items:center;gap:10px;padding-block:9px;padding-left:20px;padding-right:max(14px, env(safe-area-inset-right, 0px));background:var(--field);border-bottom:1px solid var(--line);font-weight:700;font-size:.88rem}
 .pushbar svg{flex:none;width:20px;height:20px}
@@ -89,6 +93,8 @@ img{max-width:100%}
 .grp{display:flex;flex-direction:column;gap:2px;margin-top:12px}
 .who{font-size:.74rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--c);display:flex;gap:8px;align-items:baseline}
 .who time{color:var(--muted);font-weight:700;letter-spacing:0;font-variant-numeric:tabular-nums}
+.who .av{width:22px;height:22px;font-size:.62rem;letter-spacing:0;align-self:center}
+.who .av.zoom{cursor:zoom-in}
 .bubble{position:relative;border-left:2.5px solid var(--c);padding:1px 70px 1px 10px;white-space:pre-wrap;overflow-wrap:anywhere;min-width:0;font-weight:600;font-size:1rem}
 .bubble a{color:var(--friend);text-decoration:underline;text-underline-offset:2px}
 .del{position:absolute;top:0;right:0;border:0;background:var(--field);color:var(--muted);border-radius:999px;font-size:.72rem;font-weight:800;padding:2px 10px;cursor:pointer;opacity:0;transition:opacity .15s}
@@ -110,6 +116,7 @@ img{max-width:100%}
 .chip .dots i:nth-child(3){animation-delay:.3s}
 .chip .eq{margin:0;height:13px}
 .chip .eq b{background:currentColor}
+.chip .av{width:24px;height:24px;margin-left:-11px;font-size:.6rem;letter-spacing:0}
 .chip.add{border-style:dashed;background:none;color:var(--muted);cursor:pointer;text-transform:none;letter-spacing:0}
 @keyframes bob{50%{transform:translateY(-3px)}}
 .eq{display:inline-flex;align-items:center;gap:2px;height:12px;margin-right:8px;vertical-align:-1px}
@@ -247,6 +254,15 @@ img{max-width:100%}
 .ed-zoom{display:flex;align-items:center;gap:12px;font-weight:800;font-size:.85rem;color:var(--muted)}
 .ed-zoom input{flex:1;min-width:0;accent-color:var(--friend)}
 .editor .actions .pill{max-width:none}
+.editor.avatar .stk-only{display:none!important}
+.editor.avatar #ed-canvas{border-radius:50%}
+
+/* Profile picture */
+.pfp{position:relative;border:0;padding:0;background:none;border-radius:50%;cursor:pointer}
+.av.big{width:116px;height:116px;font-size:2.8rem}
+.pfp-cam{position:absolute;right:0;bottom:0;width:36px;height:36px;border-radius:50%;background:var(--yellow);color:var(--yellow-ink);border:3px solid var(--panel);display:grid;place-items:center}
+.pfp-cam svg{width:18px;height:18px}
+.pill.armed{background:var(--danger);color:var(--on-color)}
 .lb-save{position:absolute;z-index:1;left:50%;bottom:max(20px, env(safe-area-inset-bottom, 0px));transform:translateX(-50%);white-space:nowrap}
 
 /* First start: connect, name, first group */
@@ -325,6 +341,7 @@ img{max-width:100%}
       </div>
       <div class="faces" id="faces"></div>
       <button class="invite-btn" id="invite-btn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6.5 7-6.5s7 2.5 7 6.5M19 8v6M16 11h6"/></svg>Einladen</button>
+      <button class="me-btn" id="me-btn" type="button" aria-label="Dein Profil" title="Dein Profil"></button>
     </header>
     <div class="pushbar" id="pushbar" hidden>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
@@ -379,10 +396,7 @@ img{max-width:100%}
       <p id="push-note"></p>
     </div>
     <div class="divider"></div>
-    <form class="namerow" id="name-form">
-      <input id="my-name" maxlength="30" aria-label="Dein Name" placeholder="Dein Name" autocomplete="off">
-      <button class="pill ghost" type="submit">Name speichern</button>
-    </form>
+    <button class="pill ghost" id="profile-btn" type="button">Profilbild &amp; Name ändern</button>
     <button class="textbtn" id="leave-btn" type="button">Gruppe verlassen</button>
     <div class="adminrow" id="admin-row" hidden>
       <div class="divider"></div>
@@ -403,6 +417,26 @@ img{max-width:100%}
       <button class="pill ghost" id="msheet-cancel" type="button">Abbrechen</button>
       <button class="pill danger" id="msheet-kick" type="button">Entfernen</button>
     </div>
+  </div>
+</div>
+
+<div class="sheet-wrap" id="psheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="psheet-title">
+    <span class="grab" aria-hidden="true"></span>
+    <button class="x-close" id="psheet-close" type="button" aria-label="Schließen">×</button>
+    <h2 id="psheet-title">Dein Profil</h2>
+    <button class="pfp" id="pfp-btn" type="button" aria-label="Profilbild ändern"><span id="pfp-slot"></span><span class="pfp-cam" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg></span></button>
+    <p id="pfp-note"></p>
+    <div class="actions">
+      <button class="pill go" id="pfp-pick" type="button">Foto wählen</button>
+      <button class="pill ghost" id="pfp-del" type="button">Entfernen</button>
+    </div>
+    <input type="file" id="pfp-input" accept="image/*" hidden>
+    <div class="divider"></div>
+    <form class="namerow" id="name-form">
+      <input id="my-name" maxlength="30" aria-label="Dein Name" placeholder="Dein Name" autocomplete="off">
+      <button class="pill ghost" type="submit">Name speichern</button>
+    </form>
   </div>
 </div>
 
@@ -428,20 +462,20 @@ img{max-width:100%}
   <canvas id="ed-canvas" width="512" height="512" aria-label="Vorschau vom Sticker"></canvas>
   <p class="ed-hint">Mit dem Finger verschieben, mit zwei Fingern größer oder kleiner machen</p>
   <div class="ed-tools">
-    <div class="ed-row">
+    <div class="ed-row stk-only">
       <button class="ed-chip" id="ed-cut" type="button" aria-pressed="false">✂️ Hintergrund weg</button>
       <button class="ed-chip" id="ed-outline" type="button" aria-pressed="true">Weißer Rand</button>
     </div>
-    <div class="ed-row" id="ed-shapes" role="group" aria-label="Form">
+    <div class="ed-row stk-only" id="ed-shapes" role="group" aria-label="Form">
       <button class="ed-chip" type="button" data-shape="square" aria-pressed="true">■ Eckig</button>
       <button class="ed-chip" type="button" data-shape="circle" aria-pressed="false">● Kreis</button>
       <button class="ed-chip" type="button" data-shape="heart" aria-pressed="false">♥ Herz</button>
       <button class="ed-chip" type="button" data-shape="star" aria-pressed="false">★ Stern</button>
     </div>
-    <input id="ed-text" maxlength="24" placeholder="Text drauf (wenn du willst)" aria-label="Text auf dem Sticker" autocomplete="off" enterkeyhint="done">
+    <input class="stk-only" id="ed-text" maxlength="24" placeholder="Text drauf (wenn du willst)" aria-label="Text auf dem Sticker" autocomplete="off" enterkeyhint="done">
     <label class="ed-zoom"><span>Größe</span><input type="range" id="ed-zoom" min="0.3" max="4" step="0.01" value="1"></label>
     <div class="actions">
-      <button class="pill ghost" id="ed-keep" type="button">Speichern</button>
+      <button class="pill ghost stk-only" id="ed-keep" type="button">Speichern</button>
       <button class="pill go" id="ed-send" type="button">Senden</button>
     </div>
   </div>
@@ -506,6 +540,8 @@ img{max-width:100%}
   function avatar(uid, name, cls = 'av'){
     const el = document.createElement('span'); el.className = cls;
     el.style.background = uid === me ? 'var(--me)' : colorFor(uid); el.textContent = initial(name);
+    const pic = pics.get(uid);
+    if (pic){ const img = document.createElement('img'); img.alt = ''; img.src = mediaUrl(pic); img.onerror = () => img.remove(); el.append(img); }
     return el;
   }
 
@@ -513,6 +549,7 @@ img{max-width:100%}
   let sb = null, me = null, myName = store.get('name');
   let groups = new Map(), names = new Map(), unread = new Map(), admins = new Set();
   const oldNames = new Map(); // names of people who left, so their old messages keep a name
+  let pics = new Map(), picsReady = false; // profile pictures by user; ready once profile.sql has run
   const isAdmin = () => admins.has(me);
   const crown = uid => admins.has(uid) ? ' 👑' : '';
   let current = null, msgs = [], room = null, renderSeq = 0;
@@ -671,7 +708,7 @@ img{max-width:100%}
     store.del('pendingJoin');
     if (error || !one(data)){ toast(/not found/i.test(error?.message || '') ? 'Dieser Einladungslink ist ungültig.' : 'Beitreten hat nicht geklappt. Öffne den Link nochmal.'); return null; }
     const g = one(data);
-    groups.set(g.id, g); names.set(g.id + ':' + me, myName);
+    groups.set(g.id, g); names.set(g.id + ':' + me, myName); fixMyPic();
     toast(`Du bist jetzt in der Gruppe „${g.name}“.`);
     return g.id;
   }
@@ -679,19 +716,26 @@ img{max-width:100%}
     const { data, error } = await sb.rpc('create_group', { group_name: name.slice(0, 40), my_name: myName });
     if (error || !one(data)){ toast('Die Gruppe konnte nicht erstellt werden.'); return null; }
     const g = one(data);
-    groups.set(g.id, g); names.set(g.id + ':' + me, myName);
+    groups.set(g.id, g); names.set(g.id + ':' + me, myName); fixMyPic();
     return g.id;
   }
   async function loadGroups(){
-    const [gs, ms] = await Promise.all([
+    let [gs, ms] = await Promise.all([
       sb.from('groups').select('id,name,invite_code,created_at').order('created_at'),
-      sb.from('members').select('group_id,user_id,name'),
+      sb.from('members').select('group_id,user_id,name,avatar'),
     ]);
     if (gs.error) throw gs.error;
+    picsReady = !ms.error;
+    if (ms.error) ms = await sb.from('members').select('group_id,user_id,name'); // profile.sql has not run yet
     groups = new Map((gs.data || []).map(g => [g.id, g]));
     names = new Map((ms.data || []).map(m => [m.group_id + ':' + m.user_id, m.name]));
-    renderGroups();
+    pics = new Map();
+    for (const m of ms.data || []) if (typeof m.avatar === 'string' && PATH_RE.test(m.avatar)) pics.set(m.user_id, m.avatar);
+    // A group joined later does not have my picture yet
+    if (picsReady && pics.has(me) && (ms.data || []).some(m => m.user_id === me && m.avatar !== pics.get(me))) fixMyPic();
+    renderGroups(); renderMe();
   }
+  function fixMyPic(){ if (picsReady && pics.has(me)) sb.from('members').update({ avatar: pics.get(me) }).eq('user_id', me).then(() => {}, () => {}); }
 
   function chIcon(id, name){
     const el = document.createElement('span'); el.className = 'ch-icon';
@@ -796,7 +840,14 @@ img{max-width:100%}
       if (names.has(key)) oldNames.set(key, names.get(key));
       names.delete(key);
     }
-    else names.set(key, row.name);
+    else {
+      names.set(key, row.name);
+      // A new member row has no picture yet, so only a change counts as "picture removed"
+      if ('avatar' in row && row.user_id !== me && (p.eventType === 'UPDATE' || row.avatar) && pics.get(row.user_id) !== row.avatar){
+        if (typeof row.avatar === 'string' && PATH_RE.test(row.avatar)) pics.set(row.user_id, row.avatar); else pics.delete(row.user_id);
+        renderLog(); renderPeople(); return;
+      }
+    }
     if (row.group_id === current){ renderLog(); renderPeople(); }
   }
 
@@ -840,6 +891,7 @@ img{max-width:100%}
       const p = here.get(m.uid), name = m.name || 'Jemand';
       const chip = document.createElement('span'); chip.className = 'chip' + (p ? ' here' : '');
       chip.style.setProperty('--c', colorFor(m.uid));
+      if (pics.has(m.uid)) chip.append(avatar(m.uid, name));
       chip.append(name + crown(m.uid));
       if (isAdmin()){ chip.classList.add('tap'); chip.setAttribute('role', 'button'); chip.tabIndex = 0; chip.onclick = () => openMember(m.uid, name); }
       if (p?.rec){
@@ -877,7 +929,9 @@ img{max-width:100%}
         const who = document.createElement('div'); who.className = 'who';
         const nm = document.createElement('span'); nm.textContent = (own ? 'Ich' : (nameOf(m.gid, m.by) || 'Jemand')) + crown(m.by);
         const t = document.createElement('time'); t.textContent = fmtTime(m.at);
-        who.append(nm, t); grp.append(who); frag.append(grp);
+        const av = avatar(m.by, own ? myName : nameOf(m.gid, m.by));
+        if (pics.has(m.by)){ av.classList.add('zoom'); av.onclick = () => openImage(mediaUrl(pics.get(m.by))); }
+        who.append(av, nm, t); grp.append(who); frag.append(grp);
       }
       const b = document.createElement('div'); b.className = 'bubble'; b.title = fmtTime(m.at);
       const md = m.media;
@@ -1510,8 +1564,8 @@ img{max-width:100%}
   $('stk-input').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) openEditor(f); });
 
   // The maker: the photo is moved and zoomed on a 512 × 512 canvas, then cut to a shape and/or the person,
-  // gets a white sticker edge and optional text
-  const ed = { img: null, mask: null, box: null, x: S / 2, y: S / 2, s: 1, base: 1, shape: 'square', cut: false, outline: true, text: '', busy: false, raf: 0 };
+  // gets a white sticker edge and optional text. The same maker crops profile pictures (mode "avatar").
+  const ed = { mode: 'sticker', img: null, mask: null, box: null, x: S / 2, y: S / 2, s: 1, base: 1, shape: 'square', cut: false, outline: true, text: '', busy: false, raf: 0 };
   if (['square', 'circle', 'heart', 'star'].includes(store.get('stk-shape'))) ed.shape = store.get('stk-shape');
   const edCanvas = $('ed-canvas'), edG = edCanvas.getContext('2d');
   const layer = () => Object.assign(document.createElement('canvas'), { width: S, height: S });
@@ -1548,6 +1602,8 @@ img{max-width:100%}
     const g = edG; g.clearRect(0, 0, S, S);
     if (!ed.img) return;
     const a = L1.getContext('2d'), w = ed.img.width * ed.s, h = ed.img.height * ed.s, x = ed.x - w / 2, y = ed.y - h / 2;
+    g.imageSmoothingQuality = 'high';
+    if (ed.mode === 'avatar'){ g.drawImage(ed.img, x, y, w, h); return; }
     a.globalCompositeOperation = 'source-over'; a.clearRect(0, 0, S, S);
     a.imageSmoothingQuality = 'high';
     a.drawImage(ed.img, x, y, w, h);
@@ -1574,17 +1630,20 @@ img{max-width:100%}
     $('ed-outline').setAttribute('aria-pressed', String(ed.outline));
     $('ed-zoom').value = String(ed.s / ed.base);
   }
-  async function openEditor(file){
-    if (!file.type.startsWith('image/')){ toast('Für einen Sticker brauchst du ein Bild.'); return; }
+  async function openEditor(file, mode = 'sticker'){
+    if (!file.type.startsWith('image/')){ toast(mode === 'avatar' ? 'Für ein Profilbild brauchst du ein Bild.' : 'Für einen Sticker brauchst du ein Bild.'); return; }
     let bmp;
     try { bmp = await createImageBitmap(file); } catch { toast('Dieses Bild kann dein Browser nicht öffnen.'); return; }
     const k = Math.min(1, 1400 / Math.max(bmp.width, bmp.height));
     const c = Object.assign(document.createElement('canvas'), { width: Math.max(1, Math.round(bmp.width * k)), height: Math.max(1, Math.round(bmp.height * k)) });
     c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height); if (bmp.close) bmp.close();
     if ($('ed').hidden){ ed.text = ''; $('ed-text').value = ''; }
-    Object.assign(ed, { img: c, mask: null, box: null, cut: false, base: S / Math.min(c.width, c.height), x: S / 2, y: S / 2 });
+    Object.assign(ed, { mode, img: c, mask: null, box: null, cut: false, base: S / Math.min(c.width, c.height), x: S / 2, y: S / 2 });
     ed.s = ed.base;
-    closeStickers(); $('ed').hidden = false;
+    $('ed').classList.toggle('avatar', mode === 'avatar');
+    $('ed-title').textContent = mode === 'avatar' ? 'Profilbild' : 'Sticker machen';
+    $('ed-send').textContent = mode === 'avatar' ? 'Übernehmen' : 'Senden';
+    closeStickers(); closeProfile(); $('ed').hidden = false;
     syncEd(); compose();
     if (document.fonts) document.fonts.load('900 64px Nunito').then(redraw, () => {});
   }
@@ -1649,7 +1708,7 @@ img{max-width:100%}
   $('ed-outline').onclick = () => { ed.outline = !ed.outline; syncEd(); redraw(); };
   $('ed-text').addEventListener('input', e => { ed.text = e.target.value.trim(); redraw(); });
   $('ed-text').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); e.target.blur(); } });
-  $('ed-photo').onclick = () => $('stk-input').click();
+  $('ed-photo').onclick = () => $(ed.mode === 'avatar' ? 'pfp-input' : 'stk-input').click();
   $('ed-close').onclick = () => { if (!ed.busy) closeEditor(); };
 
   // Moving with one finger, zooming with two (or the mouse wheel, or the slider)
@@ -1683,30 +1742,44 @@ img{max-width:100%}
   }, { passive: false });
   $('ed-zoom').addEventListener('input', e => { if (!ed.img) return; zoomAt(S / 2, S / 2, ed.base * Number(e.target.value) / ed.s); redraw(); });
 
+  // A profile picture is a 320 × 320 square; the round look comes from the page
+  async function avatarBlob(){
+    const c = Object.assign(document.createElement('canvas'), { width: 320, height: 320 }), g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, 320, 320);
+    g.imageSmoothingQuality = 'high'; g.drawImage(edCanvas, 0, 0, 320, 320);
+    const webp = await new Promise(r => c.toBlob(r, 'image/webp', 0.85));
+    return webp && webp.type === 'image/webp' ? webp : await new Promise(r => c.toBlob(r, 'image/jpeg', 0.88));
+  }
   async function finishSticker(send){
-    const gid = current;
+    const gid = current, pfp = ed.mode === 'avatar';
     if (!ed.img || !gid || ed.busy) return;
+    if (pfp && !picsReady){ toast(NO_PICS); return; }
     ed.busy = true;
     const keep = $('ed-keep'), go = $('ed-send');
     keep.disabled = go.disabled = true;
-    (send ? go : keep).textContent = send ? 'Wird gesendet …' : 'Wird gespeichert …';
+    (send ? go : keep).textContent = send && !pfp ? 'Wird gesendet …' : 'Wird gespeichert …';
     let path = null;
     try {
       cancelAnimationFrame(ed.raf); ed.raf = 0; compose();
-      const blob = await new Promise(r => edCanvas.toBlob(r, 'image/webp', 0.9));
+      const blob = pfp ? await avatarBlob() : await new Promise(r => edCanvas.toBlob(r, 'image/webp', 0.9));
       if (!blob) throw new Error('no picture');
       const type = OK_TYPES.includes(blob.type) ? blob.type : 'image/png';
       path = await upload(gid, blob, extOf(type), type);
+      if (pfp){
+        await setMyPic(path);
+        closeEditor(); openProfile(); toast('Profilbild gespeichert.');
+        return;
+      }
       if (send) await insertMessage(gid, { kind: 'image', text: '', media: { paths: [path], sticker: true } });
       keepSticker(path);
       closeEditor();
       if (!send){ toast('Sticker gespeichert.'); openStickers(); }
     } catch (err){
-      if (path && send) sb.storage.from('media').remove([path]).catch(() => {});
-      toast(errText(err, send ? 'Sticker senden hat nicht geklappt.' : 'Sticker speichern hat nicht geklappt.'));
+      if (path && (send || pfp)) sb.storage.from('media').remove([path]).catch(() => {});
+      toast(errText(err, pfp ? 'Profilbild speichern hat nicht geklappt.' : send ? 'Sticker senden hat nicht geklappt.' : 'Sticker speichern hat nicht geklappt.'));
     } finally {
       ed.busy = false; keep.disabled = go.disabled = false;
-      keep.textContent = 'Speichern'; go.textContent = 'Senden';
+      keep.textContent = 'Speichern'; go.textContent = pfp ? 'Übernehmen' : 'Senden';
     }
   }
   $('ed-keep').onclick = () => finishSticker(false);
@@ -1897,7 +1970,6 @@ img{max-width:100%}
     $('sheet-text').textContent = `Schick diesen Link an deine Freunde. Wer ihn öffnet, kann „${g.name}“ beitreten.`;
     $('invite-link').value = inviteLink(g);
     $('share-btn').hidden = !navigator.share;
-    $('my-name').value = myName;
     const leave = $('leave-btn'); leave.classList.remove('armed'); leave.textContent = 'Gruppe verlassen';
     $('admin-row').hidden = !isAdmin();
     const del = $('delgroup-btn'); del.classList.remove('armed'); del.textContent = 'Gruppe für alle löschen';
@@ -1925,8 +1997,48 @@ img{max-width:100%}
     myName = name; store.set('name', name);
     for (const gid of groups.keys()) names.set(gid + ':' + me, name);
     setPresence({}); if (room) Promise.resolve(room.track({ name: myName, ...presenceState })).catch(() => {});
-    renderLog(); renderPeople(); toast('Name gespeichert.');
+    renderLog(); renderPeople(); renderMe(); toast('Name gespeichert.');
   });
+
+  // ---------- Your profile: picture and name ----------
+  const NO_PICS = 'Profilbilder sind noch nicht eingerichtet. Führe zuerst profile.sql in Supabase aus.';
+  function renderMe(){
+    if (!me) return;
+    const b = $('me-btn'); b.replaceChildren(avatar(me, myName)); b.classList.toggle('nopic', !pics.has(me));
+    if ($('psheet').hidden) return;
+    $('pfp-slot').replaceChildren(avatar(me, myName, 'av big'));
+    const del = $('pfp-del'); del.hidden = !pics.has(me); del.textContent = 'Entfernen'; del.classList.remove('armed');
+    $('pfp-pick').textContent = pics.has(me) ? 'Neues Foto' : 'Foto wählen';
+    $('pfp-note').textContent = !picsReady ? NO_PICS : pics.has(me) ? 'Deine Freunde sehen dein Bild neben deinem Namen.' : 'Wähl ein Foto. Deine Freunde sehen es neben deinem Namen.';
+  }
+  function openProfile(){
+    if (!me) return;
+    closeSheet(); $('my-name').value = myName;
+    $('psheet').hidden = false; renderMe();
+  }
+  const closeProfile = () => { $('psheet').hidden = true; };
+  async function setMyPic(path){
+    const { data, error } = await sb.from('members').update({ avatar: path }).eq('user_id', me).select('user_id');
+    if (error || !data?.length) throw error || new Error('not saved');
+    const old = pics.get(me);
+    if (path) pics.set(me, path); else pics.delete(me);
+    if (old && old !== path) sb.storage.from('media').remove([old]).catch(() => {});
+    renderLog(); renderPeople(); renderMe();
+  }
+  const pickPic = () => { if (!picsReady) toast(NO_PICS); else $('pfp-input').click(); };
+  $('me-btn').onclick = openProfile;
+  $('profile-btn').onclick = openProfile;
+  $('psheet-close').onclick = closeProfile;
+  $('psheet').addEventListener('click', e => { if (e.target === $('psheet')) closeProfile(); });
+  $('pfp-btn').onclick = pickPic;
+  $('pfp-pick').onclick = pickPic;
+  $('pfp-input').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) openEditor(f, 'avatar'); });
+  $('pfp-del').onclick = async () => {
+    const btn = $('pfp-del');
+    if (!btn.classList.contains('armed')){ btn.classList.add('armed'); btn.textContent = 'Wirklich?'; return; }
+    try { await setMyPic(null); toast('Profilbild entfernt.'); }
+    catch { toast('Entfernen hat nicht geklappt.'); renderMe(); }
+  };
   $('leave-btn').onclick = async () => {
     const btn = $('leave-btn'), gid = current;
     if (!btn.classList.contains('armed')){ btn.classList.add('armed'); btn.textContent = 'Wirklich verlassen?'; return; }
@@ -1997,6 +2109,7 @@ img{max-width:100%}
     if (!lb.hidden) closeLightbox();
     if (!$('sheet').hidden) closeSheet();
     if (!$('msheet').hidden) closeMember();
+    if (!$('psheet').hidden) closeProfile();
     if (!$('stk-sheet').hidden) closeStickers();
     else if (!$('ed').hidden && !ed.busy) closeEditor();
   });

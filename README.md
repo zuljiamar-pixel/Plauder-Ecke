@@ -55,6 +55,7 @@ Tipp: Im Browser-Menü **Zum Home-Bildschirm** wählen. Dann sieht Plauderecke a
   - **✂️ Hintergrund weg:** Schneidet die Person aus. Das klappt bei Fotos von Menschen. Beim ersten Mal lädt es ein paar Sekunden.
   - Form (Eckig, Kreis, Herz, Stern), weißer Rand und Text sind frei wählbar. Mit dem Finger verschieben, mit zwei Fingern zoomen.
   - „Senden“ schickt ihn sofort, „Speichern“ legt ihn nur unter „Meine Sticker“ ab. Sticker von Freunden: groß antippen, dann „Zu meinen Stickern“.
+- **Profilbild:** Oben rechts auf deinen Kreis tippen. Tippt man im Chat auf ein Profilbild, wird es groß angezeigt.
 - **Mehrere Gruppen:** Links bzw. oben eine neue Gruppe anlegen. Jede Gruppe hat ihren eigenen Einladungslink.
 
 ## Benachrichtigungen einrichten
@@ -82,7 +83,13 @@ Auf dem iPhone gehen Benachrichtigungen nur, wenn Plauderecke über Teilen › *
    - unter **Einladen** einen neuen Einladungslink machen (der alte geht dann nicht mehr)
    - eine Gruppe für alle löschen
 
-Wer `setup.sql` später nochmal ausführt, sollte danach auch `admin.sql` nochmal ausführen.
+Wer `setup.sql` später nochmal ausführt, sollte danach auch `admin.sql` und `profile.sql` nochmal ausführen.
+
+## Profilbilder
+
+1. Im Supabase **SQL Editor** den ganzen Text aus `profile.sql` einfügen und **Run** tippen. Unten steht dann **Profilbilder sind bereit!**
+2. In Plauderecke oben rechts auf deinen Kreis tippen (oder **Einladen** › **Profilbild & Name ändern**).
+3. **Foto wählen**, zurechtschieben, **Übernehmen**. Deine Freunde sehen das Bild neben deinem Namen und unten bei den Namen.
 
 ## Gut zu wissen
 
