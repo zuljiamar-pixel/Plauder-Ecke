@@ -2834,6 +2834,24 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
       if (Notification.permission === 'granted' && !store.get('push-off')) subscribePush(false).then(renderPushUI).catch(() => {});
     }
     renderPushUI();
+    autoPush();
+  }
+  // Notifications switch themselves on: browsers only allow asking after a tap, so the first tap in the app asks.
+  // Not on taps that ask for something else themselves (camera, microphone), and not again for a few days after "no"
+  function autoPush(){
+    if (!pushSupported() || store.get('push-off') || Notification.permission !== 'default') return;
+    if (Date.now() - (Number(store.get('push-asked')) || 0) < 3 * 864e5) return;
+    const onTap = e => {
+      if (e.target.closest?.('#cam, #tab-cam, #head-cam, .row-cam, #cam-btn, #send, #pushbar-on, #push-btn, #bell-btn')) return;
+      document.removeEventListener('click', onTap, true);
+      if (Notification.permission !== 'default' || store.get('push-off')) return;
+      store.set('push-asked', String(Date.now()));
+      Promise.resolve(Notification.requestPermission()).then(p => {
+        if (p !== 'granted') return renderPushUI();
+        subscribePush(false).then(r => { if (r === 'on') toast('Benachrichtigungen sind an 🔔'); renderPushUI(); }, () => renderPushUI());
+      }, () => {});
+    };
+    document.addEventListener('click', onTap, true);
   }
   $('push-btn').onclick = async () => { $('push-btn').disabled = true; await togglePush(); $('push-btn').disabled = false; };
   $('pushbar-on').onclick = () => togglePush();
