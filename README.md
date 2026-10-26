@@ -40,12 +40,19 @@ In diesem Ordner liegen:
 
 1. Öffne deine Adresse, trag Project URL und Key ein und tippe auf **Verbinden**.
 2. Gib deinen Namen ein und erstelle eine Gruppe.
-3. Tippe auf **Einladen** und dann auf **Link teilen** oder **Kopieren**. Schick den Link zum Beispiel per WhatsApp. Deine Freunde öffnen ihn, geben ihren Namen ein und sind drin.
+3. Öffne die Gruppe, tippe oben auf **Einladen** (Person mit +) und dann auf **Link teilen** oder **Kopieren**. Schick den Link zum Beispiel per WhatsApp. Deine Freunde öffnen ihn, geben ihren Namen ein und sind drin.
 
 Tipp: Im Browser-Menü **Zum Home-Bildschirm** wählen. Dann sieht Plauderecke aus wie eine App.
 
 ## So funktioniert's
 
+- **Chat-Liste wie bei Snapchat:** Unten die Leiste mit Chats, Kamera und Profil. Bei jeder Gruppe steht, was zuletzt passiert ist (zum Beispiel „Neues Foto · 5 Min.“ oder „Geöffnet“) und wie viele Tage am Stück ihr geschrieben habt (🔥). ⌛ heißt: Heute hat noch nicht jeder geschrieben, sonst ist die Flamme morgen weg.
+  - **Chat gedrückt halten:** Anheften 📌, als gelesen markieren, Snap schicken, Freunde einladen.
+  - **Gelber Knopf unten rechts oder Person mit +:** Neue Gruppe machen oder mit einem eingefügten Link beitreten.
+- **Kamera:** Tippen für ein Foto, gedrückt halten für ein Video (bis 30 Sekunden). Danach mit **T** oder einem Tipp aufs Bild Text draufschreiben, dann **Senden an** und Gruppen auswählen. Das Kamera-Symbol neben einer Gruppe schickt den Snap direkt dorthin.
+- **Nachricht gedrückt halten** (am Computer: Rechtsklick oder ⋯): Reagieren mit Emoji, **Antworten**, Text kopieren, Löschen. Zweimal schnell tippen = ❤️.
+- **Gelesen:** Unter deiner letzten Nachricht steht „Zugestellt“ oder „Gesehen von …“. Beim Öffnen einer Gruppe zeigt eine rote Linie, wo die neuen Nachrichten anfangen.
+- **Ältere Nachrichten:** Im Chat ganz nach oben scrollen.
 - **Sprachnachricht:** Den gelben Mikrofon-Knopf gedrückt halten und sprechen. Beim Loslassen wird sie gesendet.
   - **Nach links wischen:** Die Aufnahme wird gelöscht.
   - **Nach oben wischen:** Die Aufnahme läuft ohne Festhalten weiter. Zum Senden auf den Knopf tippen.
@@ -55,8 +62,8 @@ Tipp: Im Browser-Menü **Zum Home-Bildschirm** wählen. Dann sieht Plauderecke a
   - **✂️ Hintergrund weg:** Schneidet die Person aus. Das klappt bei Fotos von Menschen. Beim ersten Mal lädt es ein paar Sekunden.
   - Form (Eckig, Kreis, Herz, Stern), weißer Rand und Text sind frei wählbar. Mit dem Finger verschieben, mit zwei Fingern zoomen.
   - „Senden“ schickt ihn sofort, „Speichern“ legt ihn nur unter „Meine Sticker“ ab. Sticker von Freunden: groß antippen, dann „Zu meinen Stickern“.
-- **Profilbild:** Oben rechts auf deinen Kreis tippen. Tippt man im Chat auf ein Profilbild, wird es groß angezeigt.
-- **Mehrere Gruppen:** Links bzw. oben eine neue Gruppe anlegen. Jede Gruppe hat ihren eigenen Einladungslink.
+- **Profilbild:** In der Chat-Liste oben links auf deinen Kreis tippen. Tippt man im Chat auf ein Profilbild, wird es groß angezeigt.
+- **Mehrere Gruppen:** Jede Gruppe hat ihren eigenen Einladungslink.
 
 ## Benachrichtigungen einrichten
 
@@ -69,7 +76,7 @@ Damit Handys Bescheid bekommen, wenn jemand schreibt, auch wenn Plauderecke zu i
    - **Deploy function** tippen
    - Hinweis: Die Adresse der Funktion steht in `index.html` und `push.sql` (bei dir: `swift-task`). Heißt deine Funktion anders, dort anpassen.
 3. Bei der Funktion `notify` unter **Settings** die Option **Verify JWT with legacy secret** ausschalten und speichern. Die Funktion prüft selbst, ob ein Aufruf von deiner Datenbank kommt.
-4. Auf der Website auf **Einschalten** tippen (oder unter **Einladen** › **Benachrichtigungen einschalten**) und erlauben. Das macht jeder auf seinem eigenen Handy.
+4. Auf der Website auf **Einschalten** tippen (oder auf die Glocke oben in der Chat-Liste) und erlauben. Das macht jeder auf seinem eigenen Handy.
 
 Auf dem iPhone gehen Benachrichtigungen nur, wenn Plauderecke über Teilen › **Zum Home-Bildschirm** hinzugefügt und von dort geöffnet wird.
 
@@ -83,13 +90,12 @@ Auf dem iPhone gehen Benachrichtigungen nur, wenn Plauderecke über Teilen › *
    - unter **Einladen** einen neuen Einladungslink machen (der alte geht dann nicht mehr)
    - eine Gruppe für alle löschen
 
-Wer `setup.sql` später nochmal ausführt, sollte danach auch `admin.sql` und `profile.sql` nochmal ausführen.
+Wer `setup.sql` später nochmal ausführt, sollte danach auch `admin.sql` und `update.sql` nochmal ausführen.
 
-## Profilbilder
+## Update: Profilbilder, Gelesen, Reaktionen, Flammen
 
-1. Im Supabase **SQL Editor** den ganzen Text aus `profile.sql` einfügen und **Run** tippen. Unten steht dann **Profilbilder sind bereit!**
-2. In Plauderecke oben rechts auf deinen Kreis tippen (oder **Einladen** › **Profilbild & Name ändern**).
-3. **Foto wählen**, zurechtschieben, **Übernehmen**. Deine Freunde sehen das Bild neben deinem Namen und unten bei den Namen.
+1. Im Supabase **SQL Editor** den ganzen Text aus `update.sql` einfügen und **Run** tippen. Unten steht dann **Update fertig!** und überall eine 1.
+2. Fertig. Ohne dieses Update läuft die Website auch, nur ohne Profilbilder, „Gesehen“, Reaktionen und Flammen.
 
 ## Gut zu wissen
 
