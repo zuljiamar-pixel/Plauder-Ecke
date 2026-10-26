@@ -316,6 +316,9 @@ img{max-width:100%}
 .pfp-cam{position:absolute;right:0;bottom:0;width:36px;height:36px;border-radius:50%;background:var(--yellow);color:var(--yellow-ink);border:3px solid var(--panel);display:grid;place-items:center}
 .pfp-cam svg{width:18px;height:18px}
 .pill.armed{background:var(--danger);color:var(--on-color)}
+.acctrow{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
+.textbtn.plain{color:var(--muted)}
+.textbtn.plain.armed{background:var(--field);color:var(--ink)}
 .lb-save{position:absolute;z-index:1;left:50%;bottom:max(20px, env(safe-area-inset-bottom, 0px));transform:translateX(-50%);white-space:nowrap}
 
 /* Camera: tap for a photo, hold for a video, then send it as a snap */
@@ -560,6 +563,12 @@ img{max-width:100%}
       <button class="pill go" id="push-btn" type="button">Benachrichtigungen einschalten</button>
       <p id="push-note"></p>
     </div>
+    <div class="acctrow" id="acct-row" hidden>
+      <div class="divider"></div>
+      <p id="acct-text"></p>
+      <button class="textbtn plain" id="logout-btn" type="button">Abmelden</button>
+      <button class="textbtn" id="delacct-btn" type="button">Account löschen</button>
+    </div>
   </div>
 </div>
 
@@ -718,6 +727,7 @@ img{max-width:100%}
   let reads = new Map(), readsReady = false; // "group:user" -> how far that person has read
   let ov = new Map(), ovReady = false; // per group: last message and flames
   let reacts = new Map(), reactsReady = false, reactFeed = null; // message -> (user -> emoji)
+  let accountsReady = false, account = ''; // username and password login (login.sql)
   let replyTo = null, newFrom = 0, hasOlder = false, loadingOlder = false, filter = 'all';
   const isAdmin = () => admins.has(me);
   const crown = uid => admins.has(uid) ? ' 👑' : '';
@@ -758,7 +768,7 @@ img{max-width:100%}
         const label = document.createElement('label'); label.className = 'field';
         const span = document.createElement('span'); span.textContent = f.label;
         const input = document.createElement('input');
-        Object.assign(input, { id: 'gate-' + f.id, value: f.value || '', placeholder: f.placeholder || '', maxLength: f.max || 400, autocomplete: 'off', required: true });
+        Object.assign(input, { id: 'gate-' + f.id, name: f.id, type: f.type || 'text', value: f.value || '', placeholder: f.placeholder || '', maxLength: f.max || 400, autocomplete: f.auto || 'off', required: true });
         input.setAttribute('autocapitalize', f.caps === false ? 'off' : 'sentences');
         label.append(span, input); form.append(label);
       }
@@ -771,7 +781,7 @@ img{max-width:100%}
       }
       form.onsubmit = e => {
         e.preventDefault();
-        const vals = {}; for (const f of fields) vals[f.id] = $('gate-' + f.id).value.trim();
+        const vals = {}; for (const f of fields) vals[f.id] = f.type === 'password' ? $('gate-' + f.id).value : $('gate-' + f.id).value.trim();
         btn.disabled = true; btn.textContent = 'Einen Moment …';
         resolve(vals);
       };
@@ -809,28 +819,46 @@ img{max-width:100%}
     }
     sb = window.supabase.createClient(cfg.url, cfg.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
 
-    try { me = await signIn(); }
-    catch (err){
-      const off = /anonymous/i.test(err?.message || '') || err?.code === 'anonymous_provider_disabled';
-      const v = await ask({
-        title: off ? 'Anonyme Anmeldung ist aus' : 'Verbindung klappt nicht',
-        text: off ? 'Schalte in Supabase unter Authentication › Sign In / Providers die Option „Allow anonymous sign-ins“ ein und speichere. Dann tippe auf „Nochmal versuchen“.'
-                  : 'Supabase antwortet nicht. Prüf deine Internetverbindung und ob Project URL und Key stimmen.',
-        button: 'Nochmal versuchen', extra: baked ? null : 'Werte neu eingeben',
-      });
-      if (v.extra) store.del('cfg');
-      return location.reload();
-    }
+    // Login with username and password (login.sql). Without it the page keeps working with guests like before.
+    const status = await sb.rpc('account_status');
+    accountsReady = !status.error;
+    if (accountsReady){
+      const { data: s0 } = await sb.auth.getSession();
+      const uid = s0?.session?.user?.id || null;
+      if (uid && typeof status.data === 'string' && status.data){ me = uid; account = status.data; }
+      else {
+        const r = await authGate(uid);
+        me = r.uid; account = r.account;
+        if (!myName && r.display){ myName = r.display.slice(0, 30); store.set('name', myName); }
+      }
+      if (!myName){ // logged in on a new phone: the name from the groups, otherwise the username
+        const { data } = await sb.from('members').select('name').eq('user_id', me).limit(1);
+        myName = (data && data[0] && data[0].name) || account; store.set('name', myName);
+      }
+    } else {
+      try { me = await signIn(); }
+      catch (err){
+        const off = /anonymous/i.test(err?.message || '') || err?.code === 'anonymous_provider_disabled';
+        const v = await ask({
+          title: off ? 'Anonyme Anmeldung ist aus' : 'Verbindung klappt nicht',
+          text: off ? 'Schalte in Supabase unter Authentication › Sign In / Providers die Option „Allow anonymous sign-ins“ ein und speichere. Dann tippe auf „Nochmal versuchen“.'
+                    : 'Supabase antwortet nicht. Prüf deine Internetverbindung und ob Project URL und Key stimmen.',
+          button: 'Nochmal versuchen', extra: baked ? null : 'Werte neu eingeben',
+        });
+        if (v.extra) store.del('cfg');
+        return location.reload();
+      }
 
-    while (!myName){
-      const invited = !!store.get('pendingJoin');
-      const v = await ask({
-        title: invited ? 'Du wurdest eingeladen' : 'Willkommen bei Plauderecke',
-        text: 'Wie sollen dich deine Freunde nennen?',
-        fields: [{ id: 'name', label: 'Dein Name', placeholder: 'z. B. Lenox', max: 30 }],
-        button: 'Weiter',
-      });
-      if (v.name){ myName = v.name.slice(0, 30); store.set('name', myName); }
+      while (!myName){
+        const invited = !!store.get('pendingJoin');
+        const v = await ask({
+          title: invited ? 'Du wurdest eingeladen' : 'Willkommen bei Plauderecke',
+          text: 'Wie sollen dich deine Freunde nennen?',
+          fields: [{ id: 'name', label: 'Dein Name', placeholder: 'z. B. Lenox', max: 30 }],
+          button: 'Weiter',
+        });
+        if (v.name){ myName = v.name.slice(0, 30); store.set('name', myName); }
+      }
     }
 
     if (adminCode) await claimAdmin(adminCode);
@@ -861,6 +889,54 @@ img{max-width:100%}
     else showList();
     initPush();
     if (created) openSheet();
+  }
+
+  // Username and password; inside it becomes name@plauderecke.invalid, an address that exists nowhere, so no mail is ever sent
+  const MAIL = '@plauderecke.invalid';
+  async function authGate(uid){
+    let mode = uid ? 'upgrade' : 'new', name = '';
+    for (;;){
+      const login = mode === 'login', invited = !!store.get('pendingJoin');
+      const v = await ask({
+        title: login ? 'Einloggen' : mode === 'upgrade' ? 'Mach dir einen Login' : invited ? 'Du wurdest eingeladen' : 'Willkommen bei Plauderecke',
+        text: login ? 'Mit deinem Benutzernamen und Passwort.'
+          : mode === 'upgrade' ? 'Wähl einen Benutzernamen und ein Passwort. Damit kommst du auf jedem Handy wieder rein. Deine Gruppen und Nachrichten bleiben.'
+          : 'Wähl einen Benutzernamen und ein Passwort. Mehr brauchst du nicht.',
+        fields: [
+          { id: 'user', label: 'Benutzername', placeholder: 'z. B. lenox', value: name, max: 20, caps: false, auto: 'username' },
+          { id: 'pass', label: 'Passwort', placeholder: 'mindestens 6 Zeichen', max: 72, caps: false, type: 'password', auto: login ? 'current-password' : 'new-password' },
+        ],
+        button: login ? 'Einloggen' : 'Account erstellen',
+        extra: login ? (mode === 'login' && uid ? 'Zurück' : 'Neu hier? Account erstellen') : 'Ich habe schon einen Account',
+      });
+      if (v.extra){ mode = login ? (uid ? 'upgrade' : 'new') : 'login'; continue; }
+      name = v.user;
+      const u = name.toLowerCase();
+      if (!/^[a-z0-9._-]{3,20}$/.test(u)){ toast('Benutzername: 3 bis 20 Zeichen, nur Buchstaben, Zahlen, Punkt, Minus oder Unterstrich. Keine Leerzeichen.'); continue; }
+      if (v.pass.length < 6){ toast('Das Passwort braucht mindestens 6 Zeichen.'); continue; }
+      if (login){
+        const { data, error } = await sb.auth.signInWithPassword({ email: u + MAIL, password: v.pass });
+        if (error || !data?.user){ toast(/invalid/i.test(error?.message || '') ? 'Benutzername oder Passwort stimmt nicht.' : 'Einloggen hat nicht geklappt. Prüf dein Internet und versuch es nochmal.'); continue; }
+        return { uid: data.user.id, account: u, display: '' };
+      }
+      if (!uid){
+        try { uid = await signIn(); }
+        catch (err){
+          toast(/anonymous/i.test(err?.message || '') || err?.code === 'anonymous_provider_disabled' ? 'Schalte in Supabase unter Authentication › Sign In / Providers „Allow anonymous sign-ins“ ein.' : 'Supabase antwortet nicht. Prüf dein Internet.');
+          continue;
+        }
+      }
+      const { error } = await sb.rpc('register_account', { uname: u, pw: v.pass });
+      if (error){
+        const m = error.message || '';
+        if (/no user/.test(m)){ await sb.auth.signOut({ scope: 'local' }).catch(() => {}); uid = null; mode = 'new'; toast('Das hat nicht geklappt. Tipp nochmal auf „Account erstellen“.'); continue; }
+        if (/already registered/.test(m)){ const st = await sb.rpc('account_status'); return { uid, account: st.data || u, display: '' }; }
+        toast(/taken/.test(m) ? 'Diesen Benutzernamen gibt es schon. Nimm einen anderen.' : 'Account erstellen hat nicht geklappt. Versuch es nochmal.');
+        continue;
+      }
+      sb.auth.refreshSession().catch(() => {});
+      return { uid, account: u, display: name };
+    }
   }
 
   async function signIn(){
@@ -2830,6 +2906,9 @@ img{max-width:100%}
   function openProfile(){
     if (!me) return;
     closeSheet(); $('my-name').value = myName;
+    $('acct-row').hidden = !accountsReady || !account;
+    $('acct-text').textContent = `Eingeloggt als @${account}. Auf einem anderen Handy einfach mit Benutzername und Passwort einloggen.`;
+    for (const [id, label] of [['logout-btn', 'Abmelden'], ['delacct-btn', 'Account löschen']]){ const b = $(id); b.classList.remove('armed'); b.textContent = label; b.disabled = false; }
     $('psheet').hidden = false; renderMe();
   }
   const closeProfile = () => { $('psheet').hidden = true; };
@@ -2849,6 +2928,44 @@ img{max-width:100%}
   $('pfp-btn').onclick = pickPic;
   $('pfp-pick').onclick = pickPic;
   $('pfp-input').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) openEditor(f, 'avatar'); });
+  async function signOutHere(){
+    try { await unsubscribePush(); } catch {}
+    await sb.auth.signOut({ scope: 'local' }).catch(() => {});
+    try { localStorage.clear(); } catch {}
+    location.reload();
+  }
+  $('logout-btn').onclick = async () => {
+    const btn = $('logout-btn');
+    if (!btn.classList.contains('armed')){ btn.classList.add('armed'); btn.textContent = 'Wirklich abmelden? Danach brauchst du dein Passwort'; return; }
+    btn.disabled = true; btn.textContent = 'Wird abgemeldet …';
+    await signOutHere();
+  };
+  // Deleting the account removes your messages, pictures and the login; the username is free again afterwards
+  $('delacct-btn').onclick = async () => {
+    const btn = $('delacct-btn');
+    if (!btn.classList.contains('armed')){ btn.classList.add('armed'); btn.textContent = 'Wirklich? Alles von dir wird gelöscht'; return; }
+    btn.disabled = true; btn.textContent = 'Wird gelöscht …';
+    try {
+      const { data } = await sb.from('messages').select('media').eq('user_id', me).limit(5000);
+      const files = [];
+      for (const r of data || []){
+        const md = r.media || {};
+        if (md.sticker) continue; // friends may have saved it
+        for (const p of [md.path, md.poster, ...(Array.isArray(md.paths) ? md.paths : [])]) if (typeof p === 'string' && PATH_RE.test(p)) files.push(p);
+      }
+      if (pics.has(me)) files.push(pics.get(me));
+      for (let i = 0; i < files.length; i += 100) await sb.storage.from('media').remove(files.slice(i, i + 100)).catch(() => {});
+      try { await unsubscribePush(); } catch {}
+      const { error } = await sb.rpc('delete_my_account');
+      if (error) throw error;
+      toast('Dein Account ist gelöscht.');
+      await signOutHere();
+    } catch {
+      btn.disabled = false; btn.classList.remove('armed'); btn.textContent = 'Account löschen';
+      toast('Löschen hat nicht geklappt. Versuch es nochmal.');
+    }
+  };
+
   $('pfp-del').onclick = async () => {
     const btn = $('pfp-del');
     if (!btn.classList.contains('armed')){ btn.classList.add('armed'); btn.textContent = 'Wirklich?'; return; }

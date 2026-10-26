@@ -97,6 +97,16 @@ Wer `setup.sql` später nochmal ausführt, sollte danach auch `admin.sql` und `u
 1. Im Supabase **SQL Editor** den ganzen Text aus `update.sql` einfügen und **Run** tippen. Unten steht dann **Update fertig!** und überall eine 1.
 2. Fertig. Ohne dieses Update läuft die Website auch, nur ohne Profilbilder, „Gesehen“, Reaktionen und Flammen.
 
+## Login mit Benutzername und Passwort
+
+1. Im Supabase **SQL Editor** den ganzen Text aus `login.sql` einfügen und **Run** tippen. Unten steht dann **Login ist bereit!**
+2. Wer Plauderecke schon benutzt, wählt beim nächsten Öffnen einmal Benutzername und Passwort. Gruppen, Nachrichten und Admin bleiben.
+3. Neue Leute brauchen nur Benutzername und Passwort. Einmal eingeloggt, bleibt das Handy eingeloggt.
+4. Auf einem neuen Handy: **Ich habe schon einen Account** und einloggen.
+5. Im Profil gibt es **Abmelden** und **Account löschen** (löscht alles von dir, der Benutzername ist danach wieder frei).
+
+Es wird keine E-Mail gebraucht und nie eine verschickt. Ein vergessenes Passwort kann man deshalb nicht zurücksetzen, also gut merken.
+
 ## Gut zu wissen
 
 - Supabase gratis: 1 GB für Fotos, Videos und Sprachnachrichten, einzelne Dateien bis 50 MB. Für eine Freundesgruppe reicht das lange.
