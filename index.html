@@ -1089,7 +1089,9 @@ img{max-width:100%}
   }
   function showList(){
     setView('list');
-    for (const id of ['sheet', 'msheet', 'stk-sheet', 'asheet']) $(id).hidden = true;
+    for (const id of ['sheet', 'msheet', 'stk-sheet', 'asheet', 'psheet', 'nsheet']) $(id).hidden = true;
+    if (!lb.hidden) closeLightbox();
+    if (!$('ed').hidden && !ed.busy) closeEditor();
     if (mobile()){
       if (rec.state !== 'idle') finishRecording(false);
       if (current) store.set('draft:' + current, $('text').value);
