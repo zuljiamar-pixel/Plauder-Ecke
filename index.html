@@ -2276,8 +2276,11 @@ img{max-width:100%}
     return webp && webp.type === 'image/webp' ? webp : await new Promise(r => c.toBlob(r, 'image/jpeg', 0.88));
   }
   async function finishSticker(send){
-    const gid = current, pfp = ed.mode === 'avatar';
-    if (!ed.img || !gid || ed.busy) return;
+    const pfp = ed.mode === 'avatar';
+    // A profile picture can be made from the chat list, where no group is open: any of my groups can hold the file
+    const gid = current && groups.has(current) ? current : pfp ? sortedGroups()[0]?.id : null;
+    if (!ed.img || ed.busy) return;
+    if (!gid){ toast(pfp ? 'Tritt zuerst einer Gruppe bei, dann klappt das Profilbild.' : 'Öffne zuerst eine Gruppe.'); return; }
     if (pfp && !picsReady){ toast(NO_PICS); return; }
     ed.busy = true;
     const keep = $('ed-keep'), go = $('ed-send');
