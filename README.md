@@ -68,6 +68,18 @@ Damit Handys Bescheid bekommen, wenn jemand schreibt, auch wenn Plauderecke zu i
 
 Auf dem iPhone gehen Benachrichtigungen nur, wenn Plauderecke über Teilen › **Zum Home-Bildschirm** hinzugefügt und von dort geöffnet wird.
 
+## Admin (Ersteller)
+
+1. Im Supabase **SQL Editor** den ganzen Text aus `admin.sql` einfügen und **Run** tippen.
+2. Unten erscheint **dein_admin_link**. Diesen Link öffnen, und zwar in dem Browser bzw. der App, mit der du Plauderecke benutzt. Den Link nie weitergeben!
+3. Danach hast du eine 👑 und kannst:
+   - unten auf einen Namen tippen und die Person aus der Gruppe entfernen
+   - jede Nachricht löschen
+   - unter **Einladen** einen neuen Einladungslink machen (der alte geht dann nicht mehr)
+   - eine Gruppe für alle löschen
+
+Wer `setup.sql` später nochmal ausführt, sollte danach auch `admin.sql` nochmal ausführen.
+
 ## Gut zu wissen
 
 - Supabase gratis: 1 GB für Fotos, Videos und Sprachnachrichten, einzelne Dateien bis 50 MB. Für eine Freundesgruppe reicht das lange.

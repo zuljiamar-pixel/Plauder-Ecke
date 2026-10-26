@@ -209,6 +209,9 @@ img{max-width:100%}
 .namerow input{flex:1;min-width:0;border:0;background:var(--field);border-radius:999px;padding:10px 16px;font-weight:700}
 .textbtn{border:0;background:none;color:var(--danger);font-weight:800;cursor:pointer;padding:8px 12px;border-radius:999px}
 .textbtn.armed{background:var(--danger);color:var(--on-color)}
+.pill.danger{background:var(--danger);color:var(--on-color)}
+.adminrow{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
+.chip.tap{cursor:pointer}
 
 /* First start: connect, name, first group */
 .gate{position:fixed;inset:0;z-index:25;background:var(--yellow);display:grid;place-items:center;overflow-y:auto;padding:max(20px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px))}
@@ -343,6 +346,25 @@ img{max-width:100%}
       <button class="pill ghost" type="submit">Name speichern</button>
     </form>
     <button class="textbtn" id="leave-btn" type="button">Gruppe verlassen</button>
+    <div class="adminrow" id="admin-row" hidden>
+      <div class="divider"></div>
+      <p>👑 Du bist Admin. Tipp unten auf einen Namen, um jemanden aus der Gruppe zu entfernen.</p>
+      <button class="pill ghost" id="newlink-btn" type="button">Neuen Einladungslink machen</button>
+      <button class="textbtn" id="delgroup-btn" type="button">Gruppe für alle löschen</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-wrap" id="msheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="msheet-title">
+    <span class="grab" aria-hidden="true"></span>
+    <button class="x-close" id="msheet-close" type="button" aria-label="Schließen">×</button>
+    <h2 id="msheet-title"></h2>
+    <p id="msheet-text"></p>
+    <div class="actions">
+      <button class="pill ghost" id="msheet-cancel" type="button">Abbrechen</button>
+      <button class="pill danger" id="msheet-kick" type="button">Entfernen</button>
+    </div>
   </div>
 </div>
 
@@ -410,12 +432,15 @@ img{max-width:100%}
 
   // ---------- State ----------
   let sb = null, me = null, myName = store.get('name');
-  let groups = new Map(), names = new Map(), unread = new Map();
+  let groups = new Map(), names = new Map(), unread = new Map(), admins = new Set();
+  const oldNames = new Map(); // names of people who left, so their old messages keep a name
+  const isAdmin = () => admins.has(me);
+  const crown = uid => admins.has(uid) ? ' 👑' : '';
   let current = null, msgs = [], room = null, renderSeq = 0;
   let pending = [], sending = false, stick = true, typingTimer = null;
   const presenceState = { typing: false, rec: false };
   const picCache = new Map(), voiceCache = new Map(), videoCache = new Map();
-  const nameOf = (gid, uid) => names.get(gid + ':' + uid) || '';
+  const nameOf = (gid, uid) => names.get(gid + ':' + uid) || oldNames.get(gid + ':' + uid) || '';
   const mediaUrl = path => sb.storage.from('media').getPublicUrl(path).data.publicUrl;
 
   // ---------- Config: baked in, from an invite link, or typed in once ----------
@@ -472,9 +497,9 @@ img{max-width:100%}
   async function boot(){
     const hash = new URLSearchParams(location.hash.slice(1));
     const linkCode = hash.get('join');
-    const linkGroup = hash.get('g');
+    const linkGroup = hash.get('g'), adminCode = hash.get('admin');
     cfg = loadConfig(hash.get('cfg'));
-    if (hash.has('join') || hash.has('cfg') || hash.has('g')){ try { history.replaceState(null, '', location.pathname + location.search); } catch {} }
+    if (hash.has('join') || hash.has('cfg') || hash.has('g') || hash.has('admin')){ try { history.replaceState(null, '', location.pathname + location.search); } catch {} }
     if (linkCode && /^[a-z0-9]{6,40}$/i.test(linkCode)) store.set('pendingJoin', linkCode);
 
     while (!cfg){
@@ -523,6 +548,8 @@ img{max-width:100%}
       if (v.name){ myName = v.name.slice(0, 30); store.set('name', myName); }
     }
 
+    if (adminCode) await claimAdmin(adminCode);
+    await loadAdmins();
     let openId = null, created = false;
     const code = store.get('pendingJoin');
     if (code) openId = await joinGroup(code);
@@ -659,6 +686,7 @@ img{max-width:100%}
     resyncing = true;
     try {
       await loadGroups();
+      await loadAdmins();
       if (!groups.size) return location.reload(); // everything was reset: start over with "create your first group"
       if (current && !groups.has(current)) await openGroup([...groups.keys()][0]);
       else if (current) await loadMessages(current);
@@ -680,8 +708,16 @@ img{max-width:100%}
   function onMember(p){
     const row = p.eventType === 'DELETE' ? p.old : p.new;
     if (!row?.group_id) return;
-    if (p.eventType === 'DELETE') names.delete(row.group_id + ':' + row.user_id);
-    else names.set(row.group_id + ':' + row.user_id, row.name);
+    const key = row.group_id + ':' + row.user_id;
+    if (p.eventType === 'DELETE'){
+      if (row.user_id === me && groups.has(row.group_id)){ // removed by the admin, or the group was deleted
+        toast(`Du bist nicht mehr in „${groups.get(row.group_id).name}“.`);
+        resync(); return;
+      }
+      if (names.has(key)) oldNames.set(key, names.get(key));
+      names.delete(key);
+    }
+    else names.set(key, row.name);
     if (row.group_id === current){ renderLog(); renderPeople(); }
   }
 
@@ -710,7 +746,7 @@ img{max-width:100%}
     if (!others.length) on.innerHTML = '<p class="hint">Niemand sonst ist gerade da.</p>';
     for (const p of people){
       const row = document.createElement('div'); row.className = 'person';
-      const label = document.createElement('span'); label.textContent = p.isMe ? `${myName} (du)` : p.name;
+      const label = document.createElement('span'); label.textContent = (p.isMe ? `${myName} (du)` : p.name) + crown(p.uid);
       row.append(avatar(p.uid, p.isMe ? myName : p.name), label); on.append(row);
       if (!p.isMe && faces.children.length < 5) faces.append(avatar(p.uid, p.name));
     }
@@ -725,7 +761,8 @@ img{max-width:100%}
       const p = here.get(m.uid), name = m.name || 'Jemand';
       const chip = document.createElement('span'); chip.className = 'chip' + (p ? ' here' : '');
       chip.style.setProperty('--c', colorFor(m.uid));
-      chip.append(name);
+      chip.append(name + crown(m.uid));
+      if (isAdmin()){ chip.classList.add('tap'); chip.setAttribute('role', 'button'); chip.tabIndex = 0; chip.onclick = () => openMember(m.uid, name); }
       if (p?.rec){
         const eq = document.createElement('span'); eq.className = 'eq';
         for (let i = 0; i < 4; i++) eq.append(document.createElement('b'));
@@ -759,7 +796,7 @@ img{max-width:100%}
         grp = document.createElement('div'); grp.className = 'grp';
         grp.style.setProperty('--c', own ? 'var(--me)' : colorFor(m.by));
         const who = document.createElement('div'); who.className = 'who';
-        const nm = document.createElement('span'); nm.textContent = own ? 'Ich' : (nameOf(m.gid, m.by) || 'Jemand');
+        const nm = document.createElement('span'); nm.textContent = (own ? 'Ich' : (nameOf(m.gid, m.by) || 'Jemand')) + crown(m.by);
         const t = document.createElement('time'); t.textContent = fmtTime(m.at);
         who.append(nm, t); grp.append(who); frag.append(grp);
       }
@@ -778,7 +815,7 @@ img{max-width:100%}
         else linkify(b, m.text);
       }
       if (!b.childNodes.length) continue;
-      if (own){
+      if (own || isAdmin()){
         const del = document.createElement('button'); del.type = 'button'; del.className = 'del'; del.textContent = 'Löschen';
         del.onclick = async () => {
           if (!del.classList.contains('armed')){ del.classList.add('armed'); del.textContent = 'Wirklich?'; setTimeout(() => { del.classList.remove('armed'); del.textContent = 'Löschen'; }, 3000); return; }
@@ -1494,6 +1531,8 @@ img{max-width:100%}
     $('share-btn').hidden = !navigator.share;
     $('my-name').value = myName;
     const leave = $('leave-btn'); leave.classList.remove('armed'); leave.textContent = 'Gruppe verlassen';
+    $('admin-row').hidden = !isAdmin();
+    const del = $('delgroup-btn'); del.classList.remove('armed'); del.textContent = 'Gruppe für alle löschen';
     $('sheet').hidden = false;
   }
   const closeSheet = () => { $('sheet').hidden = true; };
@@ -1531,18 +1570,76 @@ img{max-width:100%}
     else location.reload();
   };
 
+  // ---------- Admin (the creator): admin link, remove people, new invite link, delete a group ----------
+  async function loadAdmins(){
+    const { data, error } = await sb.from('admins').select('user_id');
+    admins = new Set(error ? [] : (data || []).map(r => r.user_id));
+  }
+  async function claimAdmin(code){
+    const { error } = await sb.rpc('claim_admin', { code });
+    if (error) toast(/wrong/i.test(error.message || '') ? 'Dieser Admin-Link stimmt nicht.' : 'Admin werden hat nicht geklappt. Ist admin.sql in Supabase ausgeführt?');
+    else toast('Du bist jetzt Admin 👑. Die Website weiß, dass du der Ersteller bist.');
+  }
+
+  let kickUid = null;
+  function openMember(uid, name){
+    if (!isAdmin()) return;
+    kickUid = uid;
+    $('msheet-title').textContent = `${name} entfernen?`;
+    $('msheet-text').textContent = `${name} fliegt aus „${groups.get(current)?.name || 'der Gruppe'}“. Mit dem alten Einladungslink könnte er wieder beitreten. Willst du das verhindern, mach danach unter „Einladen“ einen neuen Link.`;
+    $('msheet').hidden = false;
+  }
+  const closeMember = () => { $('msheet').hidden = true; kickUid = null; };
+  $('msheet-close').onclick = closeMember;
+  $('msheet-cancel').onclick = closeMember;
+  $('msheet').addEventListener('click', e => { if (e.target === $('msheet')) closeMember(); });
+  $('msheet-kick').onclick = async () => {
+    const uid = kickUid, gid = current;
+    if (!uid || !gid) return;
+    const name = nameOf(gid, uid) || 'Jemand';
+    const { data, error } = await sb.from('members').delete().eq('group_id', gid).eq('user_id', uid).select('user_id');
+    closeMember();
+    if (error || !data?.length){ toast('Entfernen hat nicht geklappt.'); return; }
+    oldNames.set(gid + ':' + uid, name); names.delete(gid + ':' + uid);
+    renderPeople(); renderLog();
+    toast(`${name} ist nicht mehr in der Gruppe.`);
+  };
+  $('newlink-btn').onclick = async () => {
+    const g = groups.get(current); if (!g) return;
+    const { data, error } = await sb.rpc('new_invite_code', { g: g.id });
+    const c = typeof data === 'string' ? data : one(data);
+    if (error || typeof c !== 'string'){ toast('Neuer Link hat nicht geklappt.'); return; }
+    g.invite_code = c;
+    $('invite-link').value = inviteLink(g);
+    toast('Neuer Link ist fertig. Der alte funktioniert nicht mehr.');
+  };
+  $('delgroup-btn').onclick = async () => {
+    const btn = $('delgroup-btn'), gid = current;
+    if (!btn.classList.contains('armed')){ btn.classList.add('armed'); btn.textContent = 'Wirklich für alle löschen?'; return; }
+    const { data, error } = await sb.from('groups').delete().eq('id', gid).select('id');
+    if (error || !data?.length){ toast('Löschen hat nicht geklappt.'); return; }
+    closeSheet();
+    groups.delete(gid); unread.delete(gid);
+    if (groups.size){ renderGroups(); await openGroup([...groups.keys()][0]); }
+    else location.reload();
+  };
+
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     if (!lb.hidden) closeLightbox();
     if (!$('sheet').hidden) closeSheet();
+    if (!$('msheet').hidden) closeMember();
   });
-  // A second invite link opened in the same tab
+  // Another invite link or the admin link opened while Plauderecke is already open
   window.addEventListener('hashchange', async () => {
-    const h = new URLSearchParams(location.hash.slice(1)), code = h.get('join');
-    if (!code || !sb || !me || !myName) return;
+    const h = new URLSearchParams(location.hash.slice(1)), code = h.get('join'), admin = h.get('admin');
+    if ((!code && !admin) || !sb || !me || !myName) return;
     try { history.replaceState(null, '', location.pathname + location.search); } catch {}
-    const id = await joinGroup(code);
-    if (id){ await loadGroups(); await openGroup(id); }
+    if (admin){ await claimAdmin(admin); await loadAdmins(); renderLog(); renderPeople(); }
+    if (code){
+      const id = await joinGroup(code);
+      if (id){ await loadGroups(); await openGroup(id); }
+    }
   });
 
   $('log').innerHTML = LOADING;
