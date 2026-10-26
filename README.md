@@ -107,6 +107,14 @@ Wer `setup.sql` später nochmal ausführt, sollte danach auch `admin.sql` und `u
 
 Es wird keine E-Mail gebraucht und nie eine verschickt. Ein vergessenes Passwort kann man deshalb nicht zurücksetzen, also gut merken.
 
+## Private Chats
+
+1. Im Supabase **SQL Editor** den ganzen Text aus `dm.sql` einfügen und **Run** tippen. Unten steht dann **Private Chats sind bereit!**
+2. Im Chat auf einen Namen tippen (unten bei den Namen oder über einer Nachricht) und **💬 Privat schreiben**. Oder in der Chat-Liste auf den gelben Knopf und jemanden auswählen.
+3. Private Chats stehen in der Chat-Liste mit dem Bild und Namen der Person. Mit dem Filter **💬 Privat** siehst du nur sie.
+
+Privat schreiben geht nur mit Leuten aus deinen Gruppen. Niemand sonst sieht den Chat, auch der Admin nicht. Wer `setup.sql` später nochmal ausführt, sollte danach auch `dm.sql` nochmal ausführen.
+
 ## Gut zu wissen
 
 - Supabase gratis: 1 GB für Fotos, Videos und Sprachnachrichten, einzelne Dateien bis 50 MB. Für eine Freundesgruppe reicht das lange.

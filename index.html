@@ -88,7 +88,8 @@ img{max-width:100%}
 .tab[aria-current="page"]{color:var(--ink)}
 .tab-badge{position:absolute;top:1px;left:40px;min-width:24px;height:22px;border-radius:11px;padding:0 6px;background:var(--me);color:var(--on-color);border:2px solid var(--panel);font-size:.74rem;font-weight:900;display:grid;place-items:center}
 .label{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:800;padding-left:8px}
-.ch-icon{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:1.1rem;color:var(--on-color);flex:none;text-transform:uppercase}
+.ch-icon{position:relative;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:1.1rem;color:var(--on-color);flex:none;text-transform:uppercase}
+.ch-icon img{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover}
 .av{position:relative;flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--on-color);font-weight:900;font-size:.9rem}
 .av img{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
 
@@ -355,6 +356,12 @@ img{max-width:100%}
 .pick:hover{background:var(--field)}
 .pick span.pick-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pick input{flex:none;width:24px;height:24px;accent-color:var(--friend)}
+button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
+.pick .av{width:44px;height:44px;font-size:1rem}
+.dm-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
+.dm-wrap .pick-list{max-height:34vh}
+#msheet-face:disabled{cursor:default}
+.who .tapme{cursor:pointer}
 .pick .gface,.pick .gface .ch-icon,.pick .gface .av{width:44px;height:44px;font-size:1rem}
 .pick .gface.two .av{width:32px;height:32px;font-size:.8rem}
 
@@ -415,6 +422,7 @@ img{max-width:100%}
     <div class="filters" role="group" aria-label="Filter">
       <button class="filter" type="button" data-filter="all" aria-pressed="true">Alle</button>
       <button class="filter" type="button" data-filter="unread" aria-pressed="false">Ungelesen <span class="fcount" id="unread-count" hidden></span></button>
+      <button class="filter" type="button" data-filter="dm" aria-pressed="false">💬 Privat</button>
       <button class="filter" type="button" data-filter="pinned" aria-pressed="false">📌 Angeheftet</button>
     </div>
     <div class="pushbar" id="pushbar" hidden>
@@ -504,12 +512,11 @@ img{max-width:100%}
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="msheet-title">
     <span class="grab" aria-hidden="true"></span>
     <button class="x-close" id="msheet-close" type="button" aria-label="Schließen">×</button>
+    <button class="pfp" id="msheet-face" type="button" aria-label="Profilbild groß anzeigen"></button>
     <h2 id="msheet-title"></h2>
     <p id="msheet-text"></p>
-    <div class="actions">
-      <button class="pill ghost" id="msheet-cancel" type="button">Abbrechen</button>
-      <button class="pill danger" id="msheet-kick" type="button">Entfernen</button>
-    </div>
+    <button class="pill go" id="msheet-dm" type="button">💬 Privat schreiben</button>
+    <button class="textbtn" id="msheet-kick" type="button" hidden>Aus der Gruppe entfernen</button>
   </div>
 </div>
 
@@ -518,6 +525,11 @@ img{max-width:100%}
     <span class="grab" aria-hidden="true"></span>
     <button class="x-close" id="nsheet-close" type="button" aria-label="Schließen">×</button>
     <h2 id="nsheet-title">Neuer Chat</h2>
+    <div class="dm-wrap" id="dm-wrap" hidden>
+      <p>Privat schreiben mit …</p>
+      <div class="pick-list" id="dm-list"></div>
+      <div class="divider"></div>
+    </div>
     <p>Mach eine neue Gruppe. Danach bekommst du einen Link für deine Freunde.</p>
     <form class="namerow" id="newgroup">
       <input id="newgroup-name" maxlength="40" placeholder="Name der Gruppe" aria-label="Name der neuen Gruppe" autocomplete="off">
@@ -969,9 +981,10 @@ img{max-width:100%}
   const MEMBER_COLS = ['group_id,user_id,name,avatar,last_read', 'group_id,user_id,name,avatar', 'group_id,user_id,name'];
   async function loadGroups(){
     let [gs, ms] = await Promise.all([
-      sb.from('groups').select('id,name,invite_code,created_at').order('created_at'),
+      sb.from('groups').select('id,name,invite_code,created_at,is_dm').order('created_at'),
       sb.from('members').select(MEMBER_COLS[0]),
     ]);
+    if (gs.error) gs = await sb.from('groups').select('id,name,invite_code,created_at').order('created_at'); // dm.sql has not run yet
     if (gs.error) throw gs.error;
     let level = 0;
     while (ms.error && ++level < MEMBER_COLS.length) ms = await sb.from('members').select(MEMBER_COLS[level]);
@@ -1030,6 +1043,10 @@ img{max-width:100%}
     const y = Math.floor(d / 365); return y === 1 ? '1 Jahr' : `${y} Jahre`;
   }
   const kindOf = o => o.lastSticker ? 'sticker' : (o.lastKind || 'text');
+  // A private chat is a group of two; it is called after the other person and shows their picture
+  const isDm = g => !!(g && g.is_dm);
+  const dmOther = g => mateIds(g.id)[0] || null;
+  const titleOf = g => !g ? '' : isDm(g) ? (nameOf(g.id, dmOther(g)) || 'Privater Chat') : g.name;
   const mateIds = gid => { const out = []; for (const k of names.keys()) if (k.startsWith(gid + ':') && k.slice(gid.length + 1) !== me) out.push(k.slice(gid.length + 1)); return out; };
   const seenBy = (gid, at) => mateIds(gid).filter(uid => (reads.get(gid + ':' + uid) || 0) >= at);
   const pins = () => { try { const a = JSON.parse(store.get('pins') || '[]'); return Array.isArray(a) ? a.filter(x => typeof x === 'string') : []; } catch { return []; } };
@@ -1039,7 +1056,7 @@ img{max-width:100%}
   function statusLine(g){
     const o = ov.get(g.id), n = unread.get(g.id) || 0;
     const el = document.createElement('span'); el.className = 'row-sub';
-    if (!o || !o.lastAt){ el.textContent = n ? `${n} neue Nachrichten` : 'Neue Gruppe · Tippe zum Chatten'; return el; }
+    if (!o || !o.lastAt){ el.textContent = n ? `${n} neue Nachrichten` : isDm(g) ? 'Privat · Tippe zum Chatten' : 'Neue Gruppe · Tippe zum Chatten'; return el; }
     const k = kindOf(o), snap = k === 'image' || k === 'video';
     el.style.setProperty('--k', KIND_COLOR[k] || 'var(--friend)');
     let icon, label;
@@ -1059,6 +1076,7 @@ img{max-width:100%}
   // Friends' pictures as the group's face, otherwise its first letter
   function groupFace(g){
     const wrap = document.createElement('span'); wrap.className = 'gface';
+    if (isDm(g)){ const o = dmOther(g); wrap.append(o ? avatar(o, nameOf(g.id, o)) : chIcon(g.id, '?')); return wrap; }
     const faces = mateIds(g.id).filter(uid => pics.has(uid));
     if (faces.length >= 2){ wrap.classList.add('two'); wrap.append(avatar(faces[0], ''), avatar(faces[1], '')); }
     else if (faces.length === 1) wrap.append(avatar(faces[0], nameOf(g.id, faces[0])));
@@ -1068,29 +1086,29 @@ img{max-width:100%}
   function renderGroups(){
     const ul = $('groups'), q = $('search').value.trim().toLowerCase(), pinned = pins();
     const list = sortedGroups()
-      .filter(g => !q || String(g.name || '').toLowerCase().includes(q))
-      .filter(g => filter === 'all' || (filter === 'unread' ? (unread.get(g.id) || 0) > 0 : pinned.includes(g.id)));
+      .filter(g => !q || String(titleOf(g) || '').toLowerCase().includes(q))
+      .filter(g => filter === 'all' || (filter === 'unread' ? (unread.get(g.id) || 0) > 0 : filter === 'dm' ? isDm(g) : pinned.includes(g.id)));
     ul.replaceChildren();
     for (const g of list){
       const li = document.createElement('li'); li.className = 'row';
       li.setAttribute('aria-current', String(g.id === current && chatShown()));
       const main = document.createElement('button'); main.type = 'button'; main.className = 'row-main';
       const text = document.createElement('span'); text.className = 'row-text';
-      text.append(Object.assign(document.createElement('span'), { className: 'row-name', textContent: g.name }), statusLine(g));
+      text.append(Object.assign(document.createElement('span'), { className: 'row-name', textContent: titleOf(g) }), statusLine(g));
       main.append(groupFace(g), text);
       main.onclick = () => showChat(g.id);
       onLongPress(main, () => rowMenu(g));
       const side = document.createElement('span'); side.className = 'row-side';
       if (pinned.includes(g.id)) side.append(Object.assign(document.createElement('span'), { className: 'row-pin', textContent: '📌', title: 'Angeheftet' }));
       const cam = document.createElement('button'); cam.type = 'button'; cam.className = 'row-cam'; cam.innerHTML = CAM_SVG;
-      cam.setAttribute('aria-label', `Snap an ${g.name}`); cam.title = 'Snap schicken';
+      cam.setAttribute('aria-label', `Snap an ${titleOf(g)}`); cam.title = 'Snap schicken';
       cam.onclick = () => openCamera(g.id);
       side.append(cam);
       li.append(main, side); ul.append(li);
     }
     const total = [...unread.values()].reduce((a, b) => a + b, 0), label = total > 99 ? '99+' : String(total);
     const empty = $('list-empty');
-    empty.textContent = q ? 'Keine Gruppe gefunden.' : filter === 'unread' ? 'Alles gelesen 🎉' : filter === 'pinned' ? 'Halte einen Chat gedrückt, um ihn anzuheften.' : '';
+    empty.textContent = q ? 'Keine Gruppe gefunden.' : filter === 'unread' ? 'Alles gelesen 🎉' : filter === 'dm' ? 'Noch keine privaten Chats. Tipp im Chat auf einen Namen und dann auf „Privat schreiben“.' : filter === 'pinned' ? 'Halte einen Chat gedrückt, um ihn anzuheften.' : '';
     empty.hidden = list.length > 0 || !empty.textContent;
     $('unread-count').hidden = $('tab-badge').hidden = !total;
     $('unread-count').textContent = $('tab-badge').textContent = label;
@@ -1098,11 +1116,11 @@ img{max-width:100%}
   }
   function rowMenu(g){
     const pinned = pins().includes(g.id);
-    openActions({ title: g.name, items: [
+    openActions({ title: titleOf(g), items: [
       { icon: '📌', label: pinned ? 'Nicht mehr anheften' : 'Anheften', run: () => { store.set('pins', JSON.stringify(pinned ? pins().filter(x => x !== g.id) : [g.id, ...pins()])); renderGroups(); } },
       unread.get(g.id) ? { icon: '✓', label: 'Als gelesen markieren', run: () => readAll(g.id) } : null,
       { icon: '📷', label: 'Snap schicken', run: () => openCamera(g.id) },
-      { icon: '👥', label: 'Freunde einladen', run: async () => { await showChat(g.id); openSheet(); } },
+      isDm(g) ? null : { icon: '👥', label: 'Freunde einladen', run: async () => { await showChat(g.id); openSheet(); } },
     ] });
   }
   function readAll(gid){
@@ -1203,8 +1221,11 @@ img{max-width:100%}
     current = gid; store.set('lastGroup', gid); unread.delete(gid);
     renderGroups();
     const g = groups.get(gid);
-    $('title').textContent = g.name;
-    const hi = $('head-icon'); hi.style.background = colorFor(gid); hi.textContent = initial(g.name);
+    const other = isDm(g) ? dmOther(g) : null;
+    $('title').textContent = titleOf(g);
+    const hi = $('head-icon'); hi.style.background = colorFor(other || gid); hi.textContent = initial(titleOf(g));
+    if (other && pics.has(other)){ const img = document.createElement('img'); img.alt = ''; img.src = mediaUrl(pics.get(other)); img.onerror = () => img.remove(); hi.append(img); }
+    $('invite-btn').hidden = isDm(g);
     $('text').value = store.get('draft:' + gid); autosize(); updateSend();
     msgs = []; hasOlder = false; renderLog.first = true; $('log').innerHTML = LOADING;
     joinRoom(gid);
@@ -1293,7 +1314,8 @@ img{max-width:100%}
     } catch {} finally { resyncing = false; }
   }
   function onInsert(row){
-    if (!row || !groups.has(row.group_id)) return;
+    if (!row) return;
+    if (!groups.has(row.group_id)){ if (row.user_id !== me) resync(); return; }
     const gid = row.group_id, at = Date.parse(row.created_at) || Date.now();
     const o = ov.get(gid) || { streak: 0, streakToday: false };
     if (!o.lastAt || at >= o.lastAt) Object.assign(o, { lastId: row.id, lastBy: row.user_id, lastKind: row.kind, lastSticker: row.media?.sticker === true, lastAt: at });
@@ -1318,7 +1340,7 @@ img{max-width:100%}
     const key = row.group_id + ':' + row.user_id, here = row.group_id === current;
     if (p.eventType === 'DELETE'){
       if (row.user_id === me && groups.has(row.group_id)){ // removed by the admin, or the group was deleted
-        toast(`Du bist nicht mehr in „${groups.get(row.group_id).name}“.`);
+        toast(`Du bist nicht mehr in „${titleOf(groups.get(row.group_id))}“.`);
         resync(); return;
       }
       if (names.has(key)) oldNames.set(key, names.get(key));
@@ -1326,6 +1348,7 @@ img{max-width:100%}
       renderGroups(); if (here){ renderLog(); renderPeople(); }
       return;
     }
+    if (row.user_id === me && !groups.has(row.group_id)){ resync(); return; }
     const changed = names.get(key) !== row.name;
     names.set(key, row.name);
     // A new member row has no picture yet, so only a change counts as "picture removed"
@@ -1372,7 +1395,8 @@ img{max-width:100%}
       chip.style.setProperty('--c', colorFor(m.uid));
       if (pics.has(m.uid)) chip.append(avatar(m.uid, name));
       chip.append(name + crown(m.uid));
-      if (isAdmin()){ chip.classList.add('tap'); chip.setAttribute('role', 'button'); chip.tabIndex = 0; chip.onclick = () => openMember(m.uid, name); }
+      chip.classList.add('tap'); chip.setAttribute('role', 'button'); chip.tabIndex = 0; chip.onclick = () => openMember(m.uid, name);
+      chip.onkeydown = e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openMember(m.uid, name); } };
       if (p?.rec){
         const eq = document.createElement('span'); eq.className = 'eq';
         for (let i = 0; i < 4; i++) eq.append(document.createElement('b'));
@@ -1389,7 +1413,7 @@ img{max-width:100%}
       const add = Object.assign(document.createElement('button'), { type: 'button', className: 'chip add', textContent: '+ Freunde einladen' });
       add.onclick = openSheet; strip.append(add);
     }
-    if (!sending) $('status').textContent = others.length ? `${others.length + 1} online` : 'Nur du bist gerade da';
+    if (!sending) $('status').textContent = isDm(groups.get(current)) ? (others.length ? 'Gerade da' : 'Privater Chat') : others.length ? `${others.length + 1} online` : 'Nur du bist gerade da';
   }
 
   // ---------- Reactions ----------
@@ -1478,7 +1502,12 @@ img{max-width:100%}
   // ---------- Messages ----------
   function renderLog(){
     const log = $('log');
-    if (!msgs.length){ log.innerHTML = EMPTY; return; }
+    if (!msgs.length){
+      log.innerHTML = EMPTY;
+      const g = groups.get(current);
+      if (isDm(g)) log.querySelector('.empty').lastChild.textContent = `Schreib ${titleOf(g)} etwas. Nur ihr zwei seht diesen Chat.`;
+      return;
+    }
     const frag = document.createDocumentFragment();
     if (hasOlder){
       const b = Object.assign(document.createElement('button'), { type: 'button', className: 'older', textContent: 'Ältere Nachrichten laden' });
@@ -1497,7 +1526,8 @@ img{max-width:100%}
         const nm = document.createElement('span'); nm.textContent = (own ? 'Ich' : (nameOf(m.gid, m.by) || 'Jemand')) + crown(m.by);
         const t = document.createElement('time'); t.textContent = fmtTime(m.at);
         const av = avatar(m.by, own ? myName : nameOf(m.gid, m.by));
-        if (pics.has(m.by)){ av.classList.add('zoom'); av.onclick = () => openImage(mediaUrl(pics.get(m.by))); }
+        if (!own){ for (const el of [av, nm]){ el.classList.add('tapme'); el.onclick = () => openMember(m.by, nameOf(m.gid, m.by) || 'Jemand'); } }
+        else if (pics.has(m.by)){ av.classList.add('zoom'); av.onclick = () => openImage(mediaUrl(pics.get(m.by))); }
         who.append(av, nm, t); grp.append(who); frag.append(grp);
       }
       const b = document.createElement('div'); b.className = 'bubble'; b.title = fmtTime(m.at); b.dataset.id = m.id;
@@ -2398,7 +2428,7 @@ img{max-width:100%}
   async function openCamera(gid){
     if (!$('cam').hidden) return;
     cam.target = gid && groups.has(gid) ? gid : null;
-    $('cam-to').textContent = $('snap-to').textContent = cam.target ? 'An: ' + groups.get(cam.target).name : '';
+    $('cam-to').textContent = $('snap-to').textContent = cam.target ? 'An: ' + titleOf(groups.get(cam.target)) : '';
     $('cam').hidden = false; $('snap').hidden = true;
     $('cam-hint').textContent = 'Tippen für ein Foto, gedrückt halten für ein Video';
     try { history.pushState({ v: 'cam' }, ''); } catch {}
@@ -2601,7 +2631,7 @@ img{max-width:100%}
       const row = document.createElement('label'); row.className = 'pick';
       const box = Object.assign(document.createElement('input'), { type: 'checkbox', value: g.id });
       box.onchange = () => { $('pick-send').disabled = !list.querySelector('input:checked'); };
-      row.append(groupFace(g), Object.assign(document.createElement('span'), { className: 'pick-name', textContent: g.name }), box);
+      row.append(groupFace(g), Object.assign(document.createElement('span'), { className: 'pick-name', textContent: titleOf(g) }), box);
       list.append(row);
     }
     $('pick-send').disabled = true;
@@ -2833,7 +2863,7 @@ img{max-width:100%}
     $('join-link').value = ''; closeNew();
     await loadGroups(); await showChat(id);
   });
-  function openNew(){ $('nsheet').hidden = false; setTimeout(() => $('newgroup-name').focus(), 60); }
+  function openNew(){ renderDmList(); $('nsheet').hidden = false; }
   const closeNew = () => { $('nsheet').hidden = true; };
   $('nsheet-close').onclick = closeNew;
   $('nsheet').addEventListener('click', e => { if (e.target === $('nsheet')) closeNew(); });
@@ -2993,22 +3023,34 @@ img{max-width:100%}
     else toast('Du bist jetzt Admin 👑. Die Website weiß, dass du der Ersteller bist.');
   }
 
+  // ---------- A person: big picture, write privately, and for the admin: remove from the group ----------
   let kickUid = null;
   function openMember(uid, name){
-    if (!isAdmin()) return;
+    if (!uid || uid === me) return;
     kickUid = uid;
-    $('msheet-title').textContent = `${name} entfernen?`;
-    $('msheet-text').textContent = `${name} fliegt aus „${groups.get(current)?.name || 'der Gruppe'}“. Mit dem alten Einladungslink könnte er wieder beitreten. Willst du das verhindern, mach danach unter „Einladen“ einen neuen Link.`;
+    const g = groups.get(current), inDm = isDm(g);
+    $('msheet-face').replaceChildren(avatar(uid, name, 'av big'));
+    $('msheet-face').disabled = !pics.has(uid);
+    $('msheet-title').textContent = name + crown(uid);
+    $('msheet-text').textContent = inDm ? 'Das ist euer privater Chat. Nur ihr zwei seht ihn.' : `In „${titleOf(g)}“. Ein privater Chat ist nur für euch zwei.`;
+    $('msheet-dm').hidden = inDm;
+    const kick = $('msheet-kick'); kick.hidden = !isAdmin() || inDm || !g; kick.classList.remove('armed'); kick.textContent = 'Aus der Gruppe entfernen';
     $('msheet').hidden = false;
   }
   const closeMember = () => { $('msheet').hidden = true; kickUid = null; };
   $('msheet-close').onclick = closeMember;
-  $('msheet-cancel').onclick = closeMember;
   $('msheet').addEventListener('click', e => { if (e.target === $('msheet')) closeMember(); });
+  $('msheet-face').onclick = () => { if (kickUid && pics.has(kickUid)) openImage(mediaUrl(pics.get(kickUid))); };
+  $('msheet-dm').onclick = () => { const uid = kickUid; closeMember(); openDm(uid); };
   $('msheet-kick').onclick = async () => {
-    const uid = kickUid, gid = current;
+    const uid = kickUid, gid = current, btn = $('msheet-kick');
     if (!uid || !gid) return;
     const name = nameOf(gid, uid) || 'Jemand';
+    if (!btn.classList.contains('armed')){
+      btn.classList.add('armed'); btn.textContent = `Wirklich ${name} entfernen?`;
+      $('msheet-text').textContent = 'Mit dem alten Einladungslink könnte er wieder beitreten. Willst du das verhindern, mach danach unter „Einladen“ einen neuen Link.';
+      return;
+    }
     const { data, error } = await sb.from('members').delete().eq('group_id', gid).eq('user_id', uid).select('user_id');
     closeMember();
     if (error || !data?.length){ toast('Entfernen hat nicht geklappt.'); return; }
@@ -3016,6 +3058,35 @@ img{max-width:100%}
     renderPeople(); renderLog();
     toast(`${name} ist nicht mehr in der Gruppe.`);
   };
+
+  // ---------- Private chats ----------
+  async function openDm(uid){
+    if (!uid || uid === me) return;
+    const known = [...groups.values()].find(g => isDm(g) && dmOther(g) === uid);
+    if (known) return showChat(known.id);
+    const { data, error } = await sb.rpc('open_dm', { other: uid, my_name: myName });
+    const g = one(data);
+    if (error || !g?.id){ toast(/schema cache|does not exist|function/i.test(error?.message || '') ? 'Private Chats sind noch nicht eingerichtet. Führe zuerst dm.sql in Supabase aus.' : 'Privaten Chat öffnen hat nicht geklappt.'); return; }
+    await loadGroups();
+    await showChat(g.id);
+  }
+  // Everyone from my groups, to start a private chat with
+  function renderDmList(){
+    const people = new Map();
+    for (const [k, n] of names){
+      const i = k.indexOf(':'), gid = k.slice(0, i), uid = k.slice(i + 1);
+      if (uid !== me && groups.has(gid) && !people.has(uid)) people.set(uid, n);
+    }
+    const list = $('dm-list'); list.replaceChildren();
+    for (const [uid, n] of [...people].sort((a, b) => a[1].localeCompare(b[1], 'de'))){
+      const b = Object.assign(document.createElement('button'), { type: 'button', className: 'pick' });
+      b.append(avatar(uid, n), Object.assign(document.createElement('span'), { className: 'pick-name', textContent: n + crown(uid) }));
+      b.onclick = () => { closeNew(); openDm(uid); };
+      list.append(b);
+    }
+    $('dm-wrap').hidden = !people.size;
+  }
+
   $('newlink-btn').onclick = async () => {
     const g = groups.get(current); if (!g) return;
     const { data, error } = await sb.rpc('new_invite_code', { g: g.id });
