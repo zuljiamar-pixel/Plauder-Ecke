@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b8fb3">
+<title>Mein E3 Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: ein Cockpit oben (Tacho-Bogen mit Akku + Reststrecke), darunter Regler-Karten und Fahrtenbuch in einer Spalte, ab Tablet zwei Spalten. */
+:root {
+  --bg: #eef2f4;
+  --panel: #ffffff;
+  --ink: #142028;
+  --muted: #5d6c76;
+  --line: #d5dee3;
+  --accent: #0b8fb3;
+  --accent-soft: #d9eff5;
+  --good: #1f9d55;
+  --warn: #d48806;
+  --bad: #d23c3c;
+  --track: #dfe6ea;
+  --display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1418; --panel: #152027; --ink: #e6eef2; --muted: #93a4ae; --line: #253540;
+    --accent: #3cc3e6; --accent-soft: #123947; --good: #46c47c; --warn: #f0ad3a; --bad: #f06a6a; --track: #22323b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1418; --panel: #152027; --ink: #e6eef2; --muted: #93a4ae; --line: #253540;
+  --accent: #3cc3e6; --accent-soft: #123947; --good: #46c47c; --warn: #f0ad3a; --bad: #f06a6a; --track: #22323b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+.field label.toggle { justify-content: flex-start; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 980px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 { font-family: var(--display); font-weight: 700; font-size: 2.1rem; letter-spacing: .01em; margin: 0; text-wrap: balance; }
+h1 span { color: var(--accent); }
+.sub { color: var(--muted); font-size: .95rem; margin: 0; }
+h2 { font-family: var(--display); font-weight: 600; font-size: 1.05rem; text-transform: uppercase; letter-spacing: .08em; margin: 0 0 12px; color: var(--muted); }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; min-width: 0; }
+
+/* Cockpit */
+.cockpit { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; align-items: center; }
+@media (max-width: 720px) { .cockpit { grid-template-columns: 1fr; } }
+.gauge { position: relative; width: 100%; max-width: 360px; margin: 0 auto; aspect-ratio: 1 / .78; }
+.gauge svg { width: 100%; height: 100%; display: block; }
+.gauge .readout { position: absolute; inset: 34% 0 auto; text-align: center; }
+.km { font-family: var(--display); font-weight: 700; font-size: clamp(3.4rem, 13vw, 4.6rem); line-height: .9; font-variant-numeric: tabular-nums; }
+.km small { font-size: .38em; font-weight: 600; color: var(--muted); margin-left: 2px; }
+.readout .lbl { font-size: .85rem; color: var(--muted); }
+.pct { font-family: var(--mono); font-size: .95rem; margin-top: 6px; }
+.chip { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .8rem; font-weight: 600; background: var(--accent-soft); color: var(--accent); }
+.chip.warn { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+.chip.bad { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); }
+.chip.good { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+
+.modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.modes .m { border: 1px solid var(--line); border-radius: 10px; padding: 10px; text-align: center; }
+.modes .m b { display: block; font-family: var(--display); font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+.modes .m span { font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.modes .m.on { border-color: var(--accent); background: var(--accent-soft); }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.fact { font-size: .9rem; }
+.fact .v { font-family: var(--mono); font-size: 1rem; font-variant-numeric: tabular-nums; }
+.fact .k { color: var(--muted); font-size: .8rem; }
+
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+@media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+
+/* Regler */
+.field { display: grid; gap: 6px; margin-bottom: 16px; }
+.field:last-child { margin-bottom: 0; }
+.field label { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; font-size: .95rem; }
+.field label output { font-family: var(--mono); font-weight: 500; color: var(--accent); }
+input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.seg button { font: inherit; font-size: .9rem; padding: 9px 4px; border: 0; background: transparent; color: var(--ink); cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--panel); font-weight: 600; }
+.seg button:focus-visible, .btn:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toggle { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: .95rem; cursor: pointer; }
+.toggle input { width: 20px; height: 20px; accent-color: var(--accent); }
+.hint { color: var(--muted); font-size: .82rem; margin: 0; }
+
+/* Laden */
+.bar { height: 14px; border-radius: 7px; background: var(--track); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); border-radius: 7px; transition: width .3s; }
+.big { font-family: var(--display); font-weight: 700; font-size: 2.2rem; font-variant-numeric: tabular-nums; line-height: 1; }
+.row { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+
+/* Fahrtenbuch */
+.logform { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 8px; align-items: end; }
+@media (max-width: 560px) { .logform { grid-template-columns: repeat(3, minmax(0, 1fr)); } .logform .btn { grid-column: 1 / -1; } }
+.logform label { display: grid; gap: 4px; font-size: .8rem; color: var(--muted); }
+.logform input { font: inherit; font-family: var(--mono); width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); min-width: 0; }
+.btn { font: inherit; font-weight: 600; padding: 9px 16px; border-radius: 9px; border: 0; background: var(--accent); color: var(--panel); cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); font-weight: 500; padding: 6px 12px; font-size: .85rem; }
+.tablewrap { overflow-x: auto; margin-top: 14px; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th, td { text-align: right; padding: 7px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child { text-align: left; }
+th { font-weight: 600; color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+td button { font: inherit; border: 0; background: none; color: var(--muted); cursor: pointer; padding: 2px 6px; }
+.learned { margin-top: 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.tips { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: .93rem; }
+footer { color: var(--muted); font-size: .8rem; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Ninebot <span>E3 Pro</span></h1>
+      <p class="sub">Reichweite, Akku und Laden auf einen Blick</p>
+    </div>
+    <span class="chip" id="statusChip">Bereit</span>
+  </header>
+
+  <section class="panel cockpit" aria-label="Cockpit">
+    <div class="gauge">
+      <svg viewBox="0 0 300 234" aria-hidden="true">
+        <path id="arcTrack" d="M 40 200 A 120 120 0 1 1 260 200" fill="none" stroke="var(--track)" stroke-width="18" stroke-linecap="round"></path>
+        <path id="arcFill" d="M 40 200 A 120 120 0 1 1 260 200" fill="none" stroke="var(--accent)" stroke-width="18" stroke-linecap="round"></path>
+        <text x="40" y="228" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="JetBrains Mono, monospace">0</text>
+        <text x="260" y="228" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="JetBrains Mono, monospace">100%</text>
+      </svg>
+      <div class="readout">
+        <div class="km"><span id="kmOut">0</span><small>km</small></div>
+        <div class="lbl">kommst du noch</div>
+        <div class="pct" id="pctOut">Akku 80 %</div>
+      </div>
+    </div>
+    <div>
+      <h2>Volle Ladung, je Modus</h2>
+      <div class="modes" id="modeTiles"></div>
+      <div class="facts">
+        <div class="fact"><div class="k">Verbrauch jetzt</div><div class="v" id="whkm">–</div></div>
+        <div class="fact"><div class="k">Energie im Akku</div><div class="v" id="whLeft">–</div></div>
+        <div class="fact"><div class="k">Akku-Gesundheit</div><div class="v" id="soh">–</div></div>
+        <div class="fact"><div class="k">Fahrzeit bis leer</div><div class="v" id="timeLeft">–</div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid2">
+    <section class="panel" aria-label="Fahrt einstellen">
+      <h2>Deine Fahrt</h2>
+      <div class="field">
+        <label for="batt">Akkustand <output id="battOut">80 %</output></label>
+        <input type="range" id="batt" min="0" max="100" step="1" value="80">
+      </div>
+      <div class="field">
+        <label>Fahrmodus</label>
+        <div class="seg" id="modeSeg" role="group" aria-label="Fahrmodus">
+          <button type="button" data-v="eco">Eco</button>
+          <button type="button" data-v="std">Standard</button>
+          <button type="button" data-v="sport">Sport</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="weight">Dein Gewicht <output id="weightOut">75 kg</output></label>
+        <input type="range" id="weight" min="40" max="120" step="1" value="75">
+      </div>
+      <div class="field">
+        <label for="temp">Temperatur draussen <output id="tempOut">15 °C</output></label>
+        <input type="range" id="temp" min="-5" max="35" step="1" value="15">
+      </div>
+      <div class="field">
+        <label>Strecke</label>
+        <div class="seg" id="terrainSeg" role="group" aria-label="Strecke">
+          <button type="button" data-v="flat">Flach</button>
+          <button type="button" data-v="mixed">Gemischt</button>
+          <button type="button" data-v="hilly">Hügelig</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="toggle" for="extra"><input type="checkbox" id="extra"> Zusatzakku (184 Wh) montiert</label>
+      </div>
+      <div class="field">
+        <label for="cycles">Ladezyklen bisher <output id="cyclesOut">50</output></label>
+        <input type="range" id="cycles" min="0" max="800" step="10" value="50">
+        <p class="hint">Ein Zyklus ist einmal 0 auf 100 % (oder zweimal 50 %). Steht in der Segway-App.</p>
+      </div>
+    </section>
+
+    <div style="display:grid; gap:18px; align-content:start; min-width:0;">
+      <section class="panel" aria-label="Laden">
+        <h2>Laden</h2>
+        <div class="field">
+          <label for="target">Laden bis <output id="targetOut">100 %</output></label>
+          <input type="range" id="target" min="50" max="100" step="5" value="100">
+        </div>
+        <div class="row">
+          <div><div class="big" id="chargeTime">–</div><div class="hint">bis voll, mit Original-Ladegerät</div></div>
+          <div style="text-align:right"><div class="big" id="readyAt">–</div><div class="hint">fertig um</div></div>
+        </div>
+        <div class="bar" style="margin-top:14px" aria-hidden="true"><i id="chargeBar"></i></div>
+        <p class="hint" style="margin-top:10px">Die letzten 20 % laden langsamer. Für den Alltag reichen 80 bis 90 %, das schont den Akku.</p>
+      </section>
+
+      <section class="panel" aria-label="Tipps">
+        <h2>Mehr Reichweite</h2>
+        <ul class="tips" id="tips"></ul>
+      </section>
+    </div>
+  </div>
+
+  <section class="panel" aria-label="Fahrtenbuch">
+    <div class="row"><h2>Fahrtenbuch</h2><span class="hint">Je mehr Fahrten, desto genauer die Rechnung</span></div>
+    <form class="logform" id="logForm">
+      <label for="lKm">Gefahren (km)<input id="lKm" type="number" inputmode="decimal" min="0.5" max="120" step="0.1" placeholder="8.5" required></label>
+      <label for="lFrom">Akku vorher (%)<input id="lFrom" type="number" inputmode="numeric" min="1" max="100" placeholder="95" required></label>
+      <label for="lTo">Akku nachher (%)<input id="lTo" type="number" inputmode="numeric" min="0" max="99" placeholder="70" required></label>
+      <button class="btn" type="submit">Fahrt speichern</button>
+    </form>
+    <p class="hint" id="logErr" hidden></p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Datum</th><th>km</th><th>Akku</th><th>Modus</th><th>km pro %</th><th></th></tr></thead>
+        <tbody id="logBody"></tbody>
+      </table>
+    </div>
+    <div class="learned">
+      <span id="learnedTxt" class="hint"></span>
+      <label class="toggle" for="useLearned" id="useLearnedWrap" hidden><input type="checkbox" id="useLearned" checked> Meine Fahrten für die Rechnung nutzen</label>
+    </div>
+  </section>
+
+  <footer>
+    Werte laut Hersteller: Akku 36 V / 368 Wh, Motor 400 W (800 W Spitze), bis 18 % Steigung, max. 25 km/h (CH/EU). Die Reststrecke ist eine Schätzung; echte Fahrten im Fahrtenbuch machen sie genauer. Deine Eingaben bleiben nur in diesem Browser.
+  </footer>
+</div>
+
+<script>
+(function () {
+  var SPEC = { mainWh: 368, extraWh: 184, usable: 0.92, chargerW: 71, chargeEff: 0.88 };
+  // Wh/km bei 75 kg, 20 °C, flach. Mit 368 Wh ergibt das etwa 38 / 30 / 22 km, wie in echten Tests.
+  var MODES = {
+    eco:   { name: "Eco",      whkm: 8.8,  speed: 15 },
+    std:   { name: "Standard", whkm: 11.2, speed: 20 },
+    sport: { name: "Sport",    whkm: 15.0, speed: 24 }
+  };
+  var TERRAIN = { flat: 1.0, mixed: 1.15, hilly: 1.35 };
+
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem("e3pro." + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem("e3pro." + k, JSON.stringify(v)); } catch (e) {} }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var sliders = ["batt", "weight", "temp", "cycles", "target"];
+  var state = store.get("state", null) || { batt: 80, weight: 75, temp: 15, cycles: 50, target: 100, mode: "std", terrain: "mixed", extra: false, useLearned: true };
+  var log = store.get("log", null);
+  if (!Array.isArray(log)) {
+    // Beispiel-Fahrten, damit man sieht, wie es aussieht. Werden mit der ersten eigenen Fahrt ersetzt.
+    log = [
+      { d: Date.now() - 5 * 864e5, km: 7.4, from: 100, to: 76, mode: "std", sample: true },
+      { d: Date.now() - 3 * 864e5, km: 12.1, from: 76, to: 41, mode: "std", sample: true },
+      { d: Date.now() - 1 * 864e5, km: 5.2, from: 92, to: 79, mode: "eco", sample: true }
+    ];
+  }
+
+  function capacityWh() {
+    var soh = Math.max(0.7, 1 - state.cycles * 0.0002);   // ca. 90 % nach 500 Zyklen
+    var cold = state.temp < 15 ? 1 - (15 - state.temp) * 0.012 : 1;
+    var wh = (SPEC.mainWh + (state.extra ? SPEC.extraWh : 0)) * SPEC.usable * soh * cold;
+    return { wh: wh, soh: soh, cold: cold };
+  }
+  function whPerKm(mode) {
+    var base = MODES[mode].whkm;
+    var weight = 1 + (state.weight - 75) * 0.006;
+    var terrain = TERRAIN[state.terrain];
+    var extraWeight = state.extra ? 1.03 : 1;
+    return base * weight * terrain * extraWeight;
+  }
+  function learnedFactor() {
+    var real = log.filter(function (t) { return !t.sample && t.from > t.to; });
+    if (!real.length) return null;
+    var sumKm = 0, sumModel = 0;
+    real.forEach(function (t) {
+      var whUsed = (t.from - t.to) / 100 * SPEC.mainWh * SPEC.usable;
+      sumModel += whUsed / MODES[t.mode || "std"].whkm;
+      sumKm += t.km;
+    });
+    return { f: sumModel / sumKm, n: real.length };   // >1 heisst: du brauchst mehr als angenommen
+  }
+  function rangeFor(mode, pct) {
+    var c = capacityWh();
+    var w = whPerKm(mode);
+    var lf = learnedFactor();
+    if (lf && state.useLearned) w *= Math.min(2, Math.max(0.5, lf.f));
+    return { km: c.wh * pct / 100 / w, whkm: w };
+  }
+
+  var ARC_LEN;
+  function render() {
+    sliders.forEach(function (k) { $(k).value = state[k]; });
+    $("extra").checked = state.extra;
+    $("useLearned").checked = state.useLearned;
+    $("battOut").textContent = state.batt + " %";
+    $("weightOut").textContent = state.weight + " kg";
+    $("tempOut").textContent = state.temp + " °C";
+    $("cyclesOut").textContent = state.cycles;
+    $("targetOut").textContent = state.target + " %";
+    [["modeSeg", "mode"], ["terrainSeg", "terrain"]].forEach(function (p) {
+      $(p[0]).querySelectorAll("button").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.v === state[p[1]]); });
+    });
+
+    var r = rangeFor(state.mode, state.batt);
+    var c = capacityWh();
+    $("kmOut").textContent = r.km < 10 ? r.km.toFixed(1) : Math.round(r.km);
+    $("pctOut").textContent = "Akku " + state.batt + " % · " + MODES[state.mode].name;
+    var color = state.batt <= 15 ? "var(--bad)" : state.batt <= 30 ? "var(--warn)" : "var(--accent)";
+    var fill = $("arcFill");
+    fill.style.stroke = color;
+    fill.style.strokeDasharray = ARC_LEN;
+    fill.style.strokeDashoffset = ARC_LEN * (1 - state.batt / 100);
+
+    var chip = $("statusChip");
+    chip.className = "chip " + (state.batt <= 15 ? "bad" : state.batt <= 30 ? "warn" : "good");
+    chip.textContent = state.batt <= 15 ? "Bald laden" : state.batt <= 30 ? "Akku knapp" : "Alles gut";
+
+    $("modeTiles").innerHTML = Object.keys(MODES).map(function (m) {
+      var km = rangeFor(m, 100).km;
+      return '<div class="m' + (m === state.mode ? " on" : "") + '"><b>' + Math.round(km) + '<small style="font-size:.55em"> km</small></b><span>' + MODES[m].name + '</span></div>';
+    }).join("");
+    $("whkm").textContent = r.whkm.toFixed(1) + " Wh/km";
+    $("whLeft").textContent = Math.round(c.wh * state.batt / 100) + " Wh";
+    $("soh").textContent = Math.round(c.soh * 100) + " %";
+    var mins = r.km / MODES[state.mode].speed * 60;
+    $("timeLeft").textContent = mins >= 60 ? Math.floor(mins / 60) + " h " + Math.round(mins % 60) + " min" : Math.round(mins) + " min";
+
+    // Laden: bis 80 % volle Leistung, danach etwa halb so schnell
+    var fullWh = (SPEC.mainWh + (state.extra ? SPEC.extraWh : 0)) * c.soh;
+    var p = SPEC.chargerW * SPEC.chargeEff;
+    var from = state.batt, to = state.target, h = 0;
+    if (to > from) {
+      var fast = Math.max(0, Math.min(to, 80) - from);
+      var slow = Math.max(0, to - Math.max(from, 80));
+      h = (fast / 100 * fullWh) / p + (slow / 100 * fullWh) / (p * 0.5);
+    }
+    $("chargeTime").textContent = h <= 0 ? "schon da" : Math.floor(h) + " h " + String(Math.round((h % 1) * 60)).padStart(2, "0");
+    var ready = new Date(Date.now() + h * 3600e3);
+    $("readyAt").textContent = h <= 0 ? "jetzt" : String(ready.getHours()).padStart(2, "0") + ":" + String(ready.getMinutes()).padStart(2, "0");
+    $("chargeBar").style.width = state.batt + "%";
+
+    renderTips(r, c);
+    renderLog();
+    store.set("state", state);
+  }
+
+  function renderTips(r, c) {
+    var tips = [];
+    if (state.mode === "sport") tips.push("Im Eco-Modus kommst du mit diesem Akku etwa " + Math.round(rangeFor("eco", state.batt).km) + " km weit statt " + Math.round(r.km) + " km.");
+    if (state.mode === "std") tips.push("Eco bringt dir etwa " + Math.round(rangeFor("eco", state.batt).km - r.km) + " km mehr.");
+    if (c.cold < 1) tips.push("Bei " + state.temp + " °C hat der Akku rund " + Math.round((1 - c.cold) * 100) + " % weniger Energie. Scooter drinnen lagern und warm laden.");
+    if (state.terrain === "hilly") tips.push("Am Berg früh Schwung holen und nicht ganz bergauf beschleunigen. Bergab bremst die Rekuperation und lädt etwas nach.");
+    tips.push("Reifendruck prüfen: zu wenig Luft kostet schnell 10 % Reichweite.");
+    if (!state.extra) tips.push("Mit dem Zusatzakku (184 Wh) hättest du etwa " + Math.round(r.km * 0.48) + " km mehr.");
+    tips.push("Den Akku nicht wochenlang ganz leer oder ganz voll stehen lassen. Zwischen 40 und 80 % lagern.");
+    $("tips").innerHTML = tips.slice(0, 4).map(function (t) { return "<li>" + t + "</li>"; }).join("");
+  }
+
+  function renderLog() {
+    var rows = log.slice().sort(function (a, b) { return b.d - a.d; });
+    $("logBody").innerHTML = rows.map(function (t) {
+      var used = t.from - t.to;
+      var d = new Date(t.d);
+      return "<tr><td>" + d.getDate() + "." + (d.getMonth() + 1) + "." + (t.sample ? ' <span class="chip">Beispiel</span>' : "") + "</td><td>" + t.km.toFixed(1) +
+        "</td><td>" + t.from + " → " + t.to + " %</td><td>" + MODES[t.mode || "std"].name + "</td><td>" + (used > 0 ? (t.km / used).toFixed(2) : "–") +
+        '</td><td><button type="button" data-del="' + t.d + '" aria-label="Fahrt löschen">✕</button></td></tr>';
+    }).join("") || '<tr><td colspan="6" class="hint">Noch keine Fahrten. Trag oben deine erste ein.</td></tr>';
+    var lf = learnedFactor();
+    if (lf) {
+      var diff = Math.round((1 / lf.f - 1) * 100);
+      $("learnedTxt").textContent = "Aus " + lf.n + (lf.n === 1 ? " Fahrt" : " Fahrten") + ": du kommst " + (diff >= 0 ? diff + " % weiter" : -diff + " % weniger weit") + " als die Standardrechnung.";
+      $("useLearnedWrap").hidden = false;
+    } else {
+      $("learnedTxt").textContent = "Trag nach einer Fahrt km und Akkustand ein. Ab der ersten Fahrt rechnet die App mit deinem echten Verbrauch.";
+      $("useLearnedWrap").hidden = true;
+    }
+  }
+
+  // Events
+  sliders.forEach(function (k) {
+    $(k).addEventListener("input", function (e) { state[k] = Number(e.target.value); render(); });
+  });
+  [["modeSeg", "mode"], ["terrainSeg", "terrain"]].forEach(function (p) {
+    $(p[0]).addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) { state[p[1]] = b.dataset.v; render(); } });
+  });
+  $("extra").addEventListener("change", function (e) { state.extra = e.target.checked; render(); });
+  $("useLearned").addEventListener("change", function (e) { state.useLearned = e.target.checked; render(); });
+  $("logForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var km = parseFloat($("lKm").value.replace(",", ".")), from = parseInt($("lFrom").value, 10), to = parseInt($("lTo").value, 10);
+    var err = $("logErr");
+    if (!(km > 0) || isNaN(from) || isNaN(to) || to >= from) {
+      err.hidden = false; err.textContent = "Akku nachher muss kleiner sein als vorher, und die km grösser als 0.";
+      return;
+    }
+    err.hidden = true;
+    log = log.filter(function (t) { return !t.sample; });
+    log.push({ d: Date.now(), km: km, from: from, to: to, mode: state.mode });
+    store.set("log", log);
+    state.batt = to;
+    e.target.reset();
+    render();
+  });
+  $("logBody").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-del]");
+    if (!b) return;
+    var id = Number(b.dataset.del);
+    log = log.filter(function (t) { return t.d !== id; });
+    store.set("log", log);
+    render();
+  });
+
+  ARC_LEN = $("arcFill").getTotalLength();
+  render();
+})();
+</script>
+</body>
+</html>
