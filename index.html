@@ -1418,11 +1418,11 @@ img{max-width:100%}
     const j = sub.toJSON();
     const { error } = await sb.rpc('save_push_subscription', { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth });
     if (error) throw error;
-    store.set('push', '1');
+    store.set('push', '1'); store.del('push-off');
     return 'on';
   }
   async function unsubscribePush(){
-    store.del('push');
+    store.del('push'); store.set('push-off', '1');
     const reg = await navigator.serviceWorker.getRegistration();
     const sub = await reg?.pushManager.getSubscription();
     if (sub){ await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint); await sub.unsubscribe(); }
@@ -1457,12 +1457,14 @@ img{max-width:100%}
     btn.className = pushOn() ? 'pill ghost' : 'pill go';
     note.textContent = denied ? 'Benachrichtigungen sind im Browser blockiert. Erlaube sie in den Einstellungen dieser Website.'
       : pushOn() ? 'Du bekommst Bescheid, wenn jemand schreibt.' : 'Bekomm Bescheid aufs Handy, wenn jemand schreibt, auch wenn Plauderecke zu ist.';
-    bar.hidden = pushOn() || denied || !!store.get('pushbar-x');
+    bar.hidden = pushOn() || denied || !!store.get('pushbar-x') || !!store.get('push-off');
   }
   function initPush(){
     if (pushSupported()){
       navigator.serviceWorker.addEventListener('message', e => { const g = e.data && e.data.openGroup; if (g && groups.has(g)) openGroup(g); });
-      if (pushOn()) subscribePush(false).catch(() => {}); // keeps the server's copy fresh
+      // Re-link this phone's notifications to whoever uses Plauderecke here right now, so a new
+      // identity on the same browser never gets pinged for its own messages (unless they were turned off)
+      if (Notification.permission === 'granted' && !store.get('push-off')) subscribePush(false).then(renderPushUI).catch(() => {});
     }
     renderPushUI();
   }

@@ -6,9 +6,10 @@ self.addEventListener('push', e => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data ? e.data.text() : '' }; }
   e.waitUntil((async () => {
-    // Is Plauderecke open in front of you right now? Then the chat itself shows the message.
+    // Is Plauderecke on the screen right now? Then the chat itself shows the message.
+    // ("focused" is not reliable for apps added to the home screen, so being visible is enough.)
     const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    if (wins.some(w => w.visibilityState === 'visible' && w.focused)) return;
+    if (wins.some(w => w.visibilityState === 'visible')) return;
     await self.registration.showNotification(d.title || 'Plauderecke', {
       body: d.body || 'Neue Nachricht',
       tag: d.group || 'plauderecke',
