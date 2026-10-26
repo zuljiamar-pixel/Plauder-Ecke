@@ -659,6 +659,7 @@ img{max-width:100%}
     resyncing = true;
     try {
       await loadGroups();
+      if (!groups.size) return location.reload(); // everything was reset: start over with "create your first group"
       if (current && !groups.has(current)) await openGroup([...groups.keys()][0]);
       else if (current) await loadMessages(current);
     } catch {} finally { resyncing = false; }
