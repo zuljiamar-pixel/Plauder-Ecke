@@ -51,6 +51,10 @@ Tipp: Im Browser-Menü **Zum Home-Bildschirm** wählen. Dann sieht Plauderecke a
   - **Nach oben wischen:** Die Aufnahme läuft ohne Festhalten weiter. Zum Senden auf den Knopf tippen.
   - Beim ersten Mal fragt der Browser nach dem Mikrofon. Erlauben.
 - **Fotos und Videos:** Über die Knöpfe links neben dem Textfeld. Große Videos werden vorher verkleinert. Dabei die Seite offen lassen.
+- **Sticker:** Den Sticker-Knopf neben dem Textfeld antippen, dann „+ Neuer Sticker“ und ein Foto wählen oder machen.
+  - **✂️ Hintergrund weg:** Schneidet die Person aus. Das klappt bei Fotos von Menschen. Beim ersten Mal lädt es ein paar Sekunden.
+  - Form (Eckig, Kreis, Herz, Stern), weißer Rand und Text sind frei wählbar. Mit dem Finger verschieben, mit zwei Fingern zoomen.
+  - „Senden“ schickt ihn sofort, „Speichern“ legt ihn nur unter „Meine Sticker“ ab. Sticker von Freunden: groß antippen, dann „Zu meinen Stickern“.
 - **Mehrere Gruppen:** Links bzw. oben eine neue Gruppe anlegen. Jede Gruppe hat ihren eigenen Einladungslink.
 
 ## Benachrichtigungen einrichten

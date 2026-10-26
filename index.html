@@ -213,6 +213,42 @@ img{max-width:100%}
 .adminrow{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
 .chip.tap{cursor:pointer}
 
+/* Stickers: in the chat, the sticker sheet and the sticker maker */
+.sticker{display:block;padding:0;border:0;background:none;margin-block:3px;cursor:zoom-in}
+.sticker img{display:block;width:150px;height:150px;object-fit:contain;filter:drop-shadow(0 3px 8px var(--shadow))}
+.sheet.wide{max-width:560px;align-items:stretch;text-align:left}
+.sheet.wide h2{text-align:center}
+.stk-head{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:32px}
+.stk-head .label{padding-left:2px}
+.textlink{border:0;background:none;color:var(--friend);font-weight:800;cursor:pointer;padding:6px 4px}
+.stk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px;max-height:34vh;overflow-y:auto}
+.stk-img,.stk-new{position:relative;aspect-ratio:1;border:0;border-radius:18px;background:var(--field);padding:6px;cursor:pointer;display:grid;place-items:center}
+.stk-img img{width:100%;height:100%;object-fit:contain;display:block}
+.stk-new{border:2px dashed var(--pill-line);background:none;color:var(--muted);font-size:.72rem;font-weight:800;line-height:1.15;text-align:center;align-content:center;gap:2px}
+.stk-new b{font-size:1.7rem;line-height:1;color:var(--ink)}
+.stk-x{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:var(--danger);color:var(--on-color);font-size:14px;line-height:22px;text-align:center;font-weight:900}
+.stk-img.editing{animation:wiggle .3s ease-in-out infinite alternate}
+@keyframes wiggle{from{transform:rotate(-2deg)}to{transform:rotate(2deg)}}
+.sheet .stk-empty{align-self:center;text-align:center}
+.editor{position:fixed;inset:0;z-index:16;background:var(--panel);color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:12px;overflow-y:auto;padding:max(12px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px))}
+.ed-top{width:100%;max-width:440px;display:flex;align-items:center;gap:10px;min-height:40px}
+.ed-top h2{flex:1;margin:0;font-weight:900;font-size:1.25rem;letter-spacing:-.01em}
+.ed-x{flex:none;width:36px;height:36px;border-radius:50%;border:0;background:var(--field);color:var(--ink);font-size:1.3rem;font-weight:800;line-height:1;cursor:pointer}
+#ed-canvas{flex:none;width:min(100%, 44vh, 400px);width:min(100%, 44dvh, 400px);height:auto;aspect-ratio:1;border-radius:24px;touch-action:none;cursor:grab;background:repeating-conic-gradient(var(--field) 0 25%, var(--panel) 0 50%) 50% / 28px 28px}
+.ed-hint{margin:-4px 0 0;font-size:.8rem;color:var(--muted);text-align:center}
+.ed-tools{width:100%;max-width:440px;display:flex;flex-direction:column;gap:10px}
+.ed-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.ed-row::-webkit-scrollbar{display:none}
+.ed-chip{flex:none;border:2px solid var(--pill-line);background:var(--pill-off);color:var(--ink);border-radius:999px;padding:7px 11px;font-weight:800;font-size:.8rem;cursor:pointer;white-space:nowrap}
+.ed-chip[aria-pressed="true"]{background:var(--yellow);border-color:var(--yellow);color:var(--yellow-ink)}
+.ed-chip:disabled{opacity:.6;cursor:progress}
+#ed-text{border:0;background:var(--field);border-radius:999px;padding:11px 16px;font-weight:800;min-width:0}
+#ed-text::placeholder{color:var(--muted)}
+.ed-zoom{display:flex;align-items:center;gap:12px;font-weight:800;font-size:.85rem;color:var(--muted)}
+.ed-zoom input{flex:1;min-width:0;accent-color:var(--friend)}
+.editor .actions .pill{max-width:none}
+.lb-save{position:absolute;z-index:1;left:50%;bottom:max(20px, env(safe-area-inset-bottom, 0px));transform:translateX(-50%);white-space:nowrap}
+
 /* First start: connect, name, first group */
 .gate{position:fixed;inset:0;z-index:25;background:var(--yellow);display:grid;place-items:center;overflow-y:auto;padding:max(20px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px))}
 .gate-card{width:100%;max-width:400px;background:var(--panel);color:var(--ink);border-radius:28px;padding:28px 22px 24px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px var(--shadow)}
@@ -228,7 +264,7 @@ img{max-width:100%}
 .lightbox img{max-width:100%;max-height:100%;border-radius:14px;object-fit:contain}
 .lightbox video{max-width:100%;max-height:100%;border-radius:14px;background:var(--tile);cursor:auto}
 .lb-close{position:absolute;top:max(12px, env(safe-area-inset-top, 0px));right:max(12px, env(safe-area-inset-right, 0px));z-index:1;width:40px;height:40px;border-radius:50%;border:0;background:var(--scrim-soft);color:var(--on-color);font-size:1.4rem;font-weight:800;line-height:1;cursor:pointer}
-.toast{position:fixed;z-index:30;left:50%;bottom:calc(136px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 18px;border-radius:999px;font-size:.88rem;font-weight:800;width:max-content;max-width:calc(100% - 32px);text-align:center}
+.toast{position:fixed;z-index:30;left:50%;bottom:calc(136px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 18px;border-radius:999px;font-size:.88rem;font-weight:800;width:max-content;max-width:calc(100% - 32px);text-align:center;pointer-events:none}
 
 @media (min-width:721px){
   .sheet-wrap{align-items:center}
@@ -258,7 +294,7 @@ img{max-width:100%}
   .lock{right:max(12px, env(safe-area-inset-right, 0px))}
 }
 @media (prefers-reduced-motion: reduce){
-  .chip .dots i,.eq b,.voice.playing .vplay::after,.sheet,.rec-dot,.rec-hint,.lock{animation:none}
+  .chip .dots i,.eq b,.voice.playing .vplay::after,.sheet,.rec-dot,.rec-hint,.lock,.stk-img.editing{animation:none}
 }
 </style>
 </head>
@@ -303,7 +339,9 @@ img{max-width:100%}
       <button class="tool" id="cam-btn" type="button" aria-label="Foto oder Video aufnehmen" title="Foto oder Video aufnehmen" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
       <button class="tool" id="gal-btn" type="button" aria-label="Bild oder Video aus der Galerie" title="Bild oder Video aus der Galerie"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-9 9"/></svg></button>
       <input type="file" id="cam-input" accept="image/*,video/*" capture="environment" hidden>
+      <button class="tool" id="stk-btn" type="button" aria-label="Sticker" title="Sticker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h5z"/><path d="M12 20v-4a4 4 0 0 1 4-4h4"/><path d="M9 9.5h.01M14 9.5h.01"/><path d="M8.5 13.5c.7.9 1.7 1.4 3 1.5"/></svg></button>
       <input type="file" id="gal-input" accept="image/*,video/*" multiple hidden>
+      <input type="file" id="stk-input" accept="image/*" hidden>
       <textarea id="text" rows="1" maxlength="2000" placeholder="Chat senden" aria-label="Nachricht"></textarea>
       <div class="recbar" id="recbar" hidden>
         <button class="rec-trash" id="rec-trash" type="button" aria-label="Aufnahme löschen" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
@@ -368,6 +406,47 @@ img{max-width:100%}
   </div>
 </div>
 
+<div class="sheet-wrap" id="stk-sheet" hidden>
+  <div class="sheet wide" role="dialog" aria-modal="true" aria-labelledby="stk-title">
+    <span class="grab" aria-hidden="true"></span>
+    <button class="x-close" id="stk-close" type="button" aria-label="Schließen">×</button>
+    <h2 id="stk-title">Sticker</h2>
+    <div class="stk-head"><span class="label">Meine Sticker</span><button class="textlink" id="stk-edit" type="button" hidden>Bearbeiten</button></div>
+    <div class="stk-grid" id="stk-mine"></div>
+    <div class="stk-head"><span class="label">Aus dieser Gruppe</span></div>
+    <div class="stk-grid" id="stk-group"></div>
+    <p class="stk-empty" id="stk-group-empty">Hier erscheinen die Sticker, die in dieser Gruppe geschickt werden.</p>
+  </div>
+</div>
+
+<div class="editor" id="ed" role="dialog" aria-modal="true" aria-labelledby="ed-title" hidden>
+  <div class="ed-top">
+    <h2 id="ed-title">Sticker machen</h2>
+    <button class="textlink" id="ed-photo" type="button">Anderes Foto</button>
+    <button class="ed-x" id="ed-close" type="button" aria-label="Schließen">×</button>
+  </div>
+  <canvas id="ed-canvas" width="512" height="512" aria-label="Vorschau vom Sticker"></canvas>
+  <p class="ed-hint">Mit dem Finger verschieben, mit zwei Fingern größer oder kleiner machen</p>
+  <div class="ed-tools">
+    <div class="ed-row">
+      <button class="ed-chip" id="ed-cut" type="button" aria-pressed="false">✂️ Hintergrund weg</button>
+      <button class="ed-chip" id="ed-outline" type="button" aria-pressed="true">Weißer Rand</button>
+    </div>
+    <div class="ed-row" id="ed-shapes" role="group" aria-label="Form">
+      <button class="ed-chip" type="button" data-shape="square" aria-pressed="true">■ Eckig</button>
+      <button class="ed-chip" type="button" data-shape="circle" aria-pressed="false">● Kreis</button>
+      <button class="ed-chip" type="button" data-shape="heart" aria-pressed="false">♥ Herz</button>
+      <button class="ed-chip" type="button" data-shape="star" aria-pressed="false">★ Stern</button>
+    </div>
+    <input id="ed-text" maxlength="24" placeholder="Text drauf (wenn du willst)" aria-label="Text auf dem Sticker" autocomplete="off" enterkeyhint="done">
+    <label class="ed-zoom"><span>Größe</span><input type="range" id="ed-zoom" min="0.3" max="4" step="0.01" value="1"></label>
+    <div class="actions">
+      <button class="pill ghost" id="ed-keep" type="button">Speichern</button>
+      <button class="pill go" id="ed-send" type="button">Senden</button>
+    </div>
+  </div>
+</div>
+
 <div class="gate" id="gate" hidden>
   <div class="gate-card">
     <img class="logo" src="icon-192.png" alt="">
@@ -377,7 +456,7 @@ img{max-width:100%}
   </div>
 </div>
 
-<div class="lightbox" id="lightbox" hidden><button class="lb-close" id="lb-close" type="button" aria-label="Schließen">×</button><img id="lightbox-img" alt="Bild in voller Größe" hidden><video id="lightbox-video" controls playsinline hidden></video></div>
+<div class="lightbox" id="lightbox" hidden><button class="lb-close" id="lb-close" type="button" aria-label="Schließen">×</button><img id="lightbox-img" alt="Bild in voller Größe" hidden><video id="lightbox-video" controls playsinline hidden></video><button class="pill go lb-save" id="lb-save" type="button" hidden>☆ Zu meinen Stickern</button></div>
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
@@ -804,6 +883,7 @@ img{max-width:100%}
       const md = m.media;
       if (m.kind === 'audio' && PATH_RE.test(md.path || '')) b.append(voiceEl(m, own));
       else if (m.kind === 'video' && PATH_RE.test(md.path || '')) b.append(videoEl(m));
+      else if (m.kind === 'image' && md.sticker === true && Array.isArray(md.paths) && PATH_RE.test(md.paths[0] || '')) b.append(stickerEl(m, md.paths[0]));
       else if (m.kind === 'image' && Array.isArray(md.paths)){
         const paths = md.paths.filter(p => PATH_RE.test(p)).slice(0, 4);
         const pics = document.createElement('div'); pics.className = 'pics' + (paths.length === 1 ? ' one' : '');
@@ -823,11 +903,12 @@ img{max-width:100%}
           const { error } = await sb.from('messages').delete().eq('id', m.id);
           if (error){ toast('Löschen hat nicht geklappt. Versuch es gleich noch mal.'); return; }
           onDelete({ id: m.id });
-          const files = [md.path, md.poster, ...(Array.isArray(md.paths) ? md.paths : [])].filter(p => typeof p === 'string' && PATH_RE.test(p));
+          // A sticker file stays: the same sticker can be in other messages and in people's sticker lists
+          const files = md.sticker ? [] : [md.path, md.poster, ...(Array.isArray(md.paths) ? md.paths : [])].filter(p => typeof p === 'string' && PATH_RE.test(p));
           if (files.length) sb.storage.from('media').remove(files).catch(() => {});
         };
         // On phones there is no hover: tapping your own message shows its delete button
-        b.addEventListener('click', e => { if (!e.target.closest('a,.pics,.del,.voice,.vid')) b.classList.toggle('show'); });
+        b.addEventListener('click', e => { if (!e.target.closest('a,.pics,.del,.voice,.vid,.sticker')) b.classList.toggle('show'); });
         b.append(del);
       }
       grp.append(b); prev = m;
@@ -845,6 +926,18 @@ img{max-width:100%}
     img.onerror = () => { const gone = Object.assign(document.createElement('div'), { className: 'gone', textContent: 'Bild nicht verfügbar' }); picCache.set(path, gone); btn.replaceWith(gone); };
     btn.onclick = () => openImage(img.src);
     btn.append(img); picCache.set(path, btn);
+    return btn;
+  }
+  // Cached per message, because the same sticker file can be sent many times
+  function stickerEl(m, path){
+    const key = 'stk:' + m.id;
+    if (picCache.has(key)) return picCache.get(key);
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'sticker'; btn.setAttribute('aria-label', 'Sticker groß anzeigen');
+    const img = document.createElement('img'); img.alt = 'Sticker'; img.src = mediaUrl(path);
+    img.onload = () => { if (stick) $('log').scrollTop = $('log').scrollHeight; };
+    img.onerror = () => { const gone = Object.assign(document.createElement('div'), { className: 'gone', textContent: 'Sticker nicht verfügbar' }); picCache.set(key, gone); btn.replaceWith(gone); };
+    btn.onclick = () => openImage(img.src, path);
+    btn.append(img); picCache.set(key, btn);
     return btn;
   }
 
@@ -866,9 +959,22 @@ img{max-width:100%}
 
   // ---------- Viewer for photos and videos ----------
   const lb = $('lightbox'), lbImg = $('lightbox-img'), lbVid = $('lightbox-video');
-  function openImage(src){ lbVid.hidden = true; lbImg.hidden = false; lbImg.src = src; lb.hidden = false; }
+  let lbSticker = null;
+  function openImage(src, sticker){
+    lbVid.hidden = true; lbImg.hidden = false; lbImg.src = src; lb.hidden = false;
+    lbSticker = sticker || null;
+    const save = $('lb-save'); save.hidden = !lbSticker;
+    if (lbSticker){ const have = myStickers().includes(lbSticker); save.disabled = have; save.textContent = have ? '✓ In deinen Stickern' : '☆ Zu meinen Stickern'; }
+  }
+  $('lb-save').onclick = () => {
+    if (!lbSticker) return;
+    keepSticker(lbSticker);
+    $('lb-save').disabled = true; $('lb-save').textContent = '✓ Gespeichert';
+    toast('Gespeichert. Du findest ihn unter dem Sticker-Knopf.');
+  };
   function openVideo(src, poster){
     stopVoice();
+    $('lb-save').hidden = true;
     lbImg.hidden = true; lbVid.hidden = false; lb.hidden = false;
     if (poster) lbVid.poster = poster; else lbVid.removeAttribute('poster');
     lbVid.src = src; lbVid.play().catch(() => {});
@@ -1344,6 +1450,268 @@ img{max-width:100%}
     return { blob: new Blob(chunks, { type }), type, ext: webm ? 'webm' : 'mp4', dur: Math.min(limit, v.currentTime || limit), w, h };
   }
 
+  // ---------- Stickers: make one from a photo, keep it, send it ----------
+  // A sticker is a picture message with media.sticker = true; "my stickers" is a list of file paths on this phone
+  const MP = 'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1675465747/';
+  const S = 512;
+  const myStickers = () => { try { const a = JSON.parse(store.get('stickers') || '[]'); return Array.isArray(a) ? a.filter(p => typeof p === 'string' && PATH_RE.test(p)) : []; } catch { return []; } };
+  const keepSticker = path => store.set('stickers', JSON.stringify([path, ...myStickers().filter(p => p !== path)].slice(0, 60)));
+  const dropSticker = path => store.set('stickers', JSON.stringify(myStickers().filter(p => p !== path)));
+
+  let stkBusy = false, stkEditing = false;
+  async function sendSticker(path){
+    const gid = current;
+    if (!gid || stkBusy) return false;
+    stkBusy = true;
+    try { await insertMessage(gid, { kind: 'image', text: '', media: { paths: [path], sticker: true } }); keepSticker(path); return true; }
+    catch (err){ toast(errText(err, 'Sticker senden hat nicht geklappt.')); return false; }
+    finally { stkBusy = false; }
+  }
+  function stickerTile(path, onPick){
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'stk-img'; b.setAttribute('aria-label', 'Sticker senden');
+    const img = document.createElement('img'); img.alt = ''; img.loading = 'lazy'; img.src = mediaUrl(path);
+    img.onerror = () => b.remove();
+    b.append(img); b.onclick = onPick;
+    return b;
+  }
+  function renderStickers(){
+    const list = myStickers();
+    if (!list.length) stkEditing = false;
+    const mine = $('stk-mine'); mine.replaceChildren();
+    const add = document.createElement('button'); add.type = 'button'; add.className = 'stk-new';
+    add.append(Object.assign(document.createElement('b'), { textContent: '+' }), 'Neuer Sticker');
+    add.onclick = () => $('stk-input').click();
+    mine.append(add);
+    for (const p of list){
+      const t = stickerTile(p, async () => {
+        if (stkEditing){ dropSticker(p); renderStickers(); return; }
+        if (await sendSticker(p)) closeStickers();
+      });
+      if (stkEditing){ t.classList.add('editing'); t.setAttribute('aria-label', 'Sticker aus deiner Liste entfernen'); t.append(Object.assign(document.createElement('span'), { className: 'stk-x', textContent: '×' })); }
+      mine.append(t);
+    }
+    const edit = $('stk-edit'); edit.hidden = !list.length; edit.textContent = stkEditing ? 'Fertig' : 'Bearbeiten';
+    // Stickers the others sent in this group, newest first, so you can send them too
+    const seen = new Set(list), grp = $('stk-group'); grp.replaceChildren();
+    for (let i = msgs.length - 1; i >= 0; i--){
+      const md = msgs[i].media, p = Array.isArray(md.paths) ? md.paths[0] : null;
+      if (md.sticker !== true || typeof p !== 'string' || !PATH_RE.test(p) || seen.has(p)) continue;
+      seen.add(p);
+      grp.append(stickerTile(p, async () => { if (await sendSticker(p)) closeStickers(); }));
+    }
+    $('stk-group-empty').hidden = grp.children.length > 0;
+  }
+  function openStickers(){ if (!current) return; stkEditing = false; renderStickers(); $('stk-sheet').hidden = false; }
+  const closeStickers = () => { $('stk-sheet').hidden = true; };
+  $('stk-btn').onclick = openStickers;
+  $('stk-close').onclick = closeStickers;
+  $('stk-sheet').addEventListener('click', e => { if (e.target === $('stk-sheet')) closeStickers(); });
+  $('stk-edit').onclick = () => { stkEditing = !stkEditing; renderStickers(); };
+  $('stk-input').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) openEditor(f); });
+
+  // The maker: the photo is moved and zoomed on a 512 × 512 canvas, then cut to a shape and/or the person,
+  // gets a white sticker edge and optional text
+  const ed = { img: null, mask: null, box: null, x: S / 2, y: S / 2, s: 1, base: 1, shape: 'square', cut: false, outline: true, text: '', busy: false, raf: 0 };
+  if (['square', 'circle', 'heart', 'star'].includes(store.get('stk-shape'))) ed.shape = store.get('stk-shape');
+  const edCanvas = $('ed-canvas'), edG = edCanvas.getContext('2d');
+  const layer = () => Object.assign(document.createElement('canvas'), { width: S, height: S });
+  const L1 = layer(), L2 = layer();
+
+  function shapePath(g, shape){
+    g.beginPath();
+    if (shape === 'circle') g.arc(256, 256, 232, 0, Math.PI * 2);
+    else if (shape === 'heart'){
+      g.moveTo(256, 470);
+      g.bezierCurveTo(120, 380, 28, 300, 28, 182);
+      g.bezierCurveTo(28, 100, 90, 44, 166, 44);
+      g.bezierCurveTo(206, 44, 240, 66, 256, 104);
+      g.bezierCurveTo(272, 66, 306, 44, 346, 44);
+      g.bezierCurveTo(422, 44, 484, 100, 484, 182);
+      g.bezierCurveTo(484, 300, 392, 380, 256, 470);
+      g.closePath();
+    } else if (shape === 'star'){
+      for (let i = 0; i < 10; i++){ const r = i % 2 ? 108 : 240, a = -Math.PI / 2 + i * Math.PI / 5; g.lineTo(256 + r * Math.cos(a), 270 + r * Math.sin(a)); }
+      g.closePath();
+    } else if (g.roundRect) g.roundRect(22, 22, 468, 468, 28);
+    else g.rect(22, 22, 468, 468);
+  }
+  function drawText(g, text){
+    let size = 76;
+    const font = () => { g.font = `900 ${size}px Nunito, "Arial Black", sans-serif`; };
+    font();
+    while (size > 24 && g.measureText(text).width > 460){ size -= 2; font(); }
+    g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.lineJoin = 'round';
+    g.lineWidth = Math.max(6, size * 0.22); g.strokeStyle = '#000'; g.strokeText(text, 256, 486);
+    g.fillStyle = '#fff'; g.fillText(text, 256, 486);
+  }
+  function compose(){
+    const g = edG; g.clearRect(0, 0, S, S);
+    if (!ed.img) return;
+    const a = L1.getContext('2d'), w = ed.img.width * ed.s, h = ed.img.height * ed.s, x = ed.x - w / 2, y = ed.y - h / 2;
+    a.globalCompositeOperation = 'source-over'; a.clearRect(0, 0, S, S);
+    a.imageSmoothingQuality = 'high';
+    a.drawImage(ed.img, x, y, w, h);
+    a.globalCompositeOperation = 'destination-in';
+    if (ed.cut && ed.mask) a.drawImage(ed.mask, x, y, w, h);
+    shapePath(a, ed.shape); a.fill();
+    a.globalCompositeOperation = 'source-over';
+    if (ed.outline){
+      // The edge: the cut-out drawn many times around itself, then filled white
+      const o = L2.getContext('2d');
+      o.globalCompositeOperation = 'source-over'; o.clearRect(0, 0, S, S);
+      for (const [r, n] of [[12, 24], [6, 12]]) for (let i = 0; i < n; i++){ const t = i / n * Math.PI * 2; o.drawImage(L1, Math.cos(t) * r, Math.sin(t) * r); }
+      o.globalCompositeOperation = 'source-in'; o.fillStyle = '#fff'; o.fillRect(0, 0, S, S);
+      g.save(); g.shadowColor = 'rgba(0,0,0,.28)'; g.shadowBlur = 10; g.shadowOffsetY = 3; g.drawImage(L2, 0, 0); g.restore();
+    }
+    g.drawImage(L1, 0, 0);
+    if (ed.text) drawText(g, ed.text);
+  }
+  const redraw = () => { if (!ed.raf) ed.raf = requestAnimationFrame(() => { ed.raf = 0; compose(); }); };
+
+  function syncEd(){
+    for (const b of document.querySelectorAll('#ed-shapes .ed-chip')) b.setAttribute('aria-pressed', String(b.dataset.shape === ed.shape));
+    $('ed-cut').setAttribute('aria-pressed', String(ed.cut));
+    $('ed-outline').setAttribute('aria-pressed', String(ed.outline));
+    $('ed-zoom').value = String(ed.s / ed.base);
+  }
+  async function openEditor(file){
+    if (!file.type.startsWith('image/')){ toast('Für einen Sticker brauchst du ein Bild.'); return; }
+    let bmp;
+    try { bmp = await createImageBitmap(file); } catch { toast('Dieses Bild kann dein Browser nicht öffnen.'); return; }
+    const k = Math.min(1, 1400 / Math.max(bmp.width, bmp.height));
+    const c = Object.assign(document.createElement('canvas'), { width: Math.max(1, Math.round(bmp.width * k)), height: Math.max(1, Math.round(bmp.height * k)) });
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height); if (bmp.close) bmp.close();
+    if ($('ed').hidden){ ed.text = ''; $('ed-text').value = ''; }
+    Object.assign(ed, { img: c, mask: null, box: null, cut: false, base: S / Math.min(c.width, c.height), x: S / 2, y: S / 2 });
+    ed.s = ed.base;
+    closeStickers(); $('ed').hidden = false;
+    syncEd(); compose();
+    if (document.fonts) document.fonts.load('900 64px Nunito').then(redraw, () => {});
+  }
+  function closeEditor(){ $('ed').hidden = true; ed.img = ed.mask = ed.box = null; pts.clear(); edG.clearRect(0, 0, S, S); }
+
+  // Finds the person in the photo (MediaPipe, loaded the first time it is needed)
+  let segmenter = null;
+  const loadScript = src => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.crossOrigin = 'anonymous'; s.onload = res; s.onerror = () => rej(new Error('load failed')); document.head.append(s); });
+  const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+  async function personMask(src){
+    if (!segmenter){
+      segmenter = withTimeout((async () => {
+        if (!window.SelfieSegmentation) await loadScript(MP + 'selfie_segmentation.js');
+        const seg = new window.SelfieSegmentation({ locateFile: f => MP + f });
+        seg.setOptions({ modelSelection: 0 });
+        await seg.initialize();
+        return seg;
+      })(), 60000);
+      segmenter.catch(() => { segmenter = null; });
+    }
+    const seg = await segmenter;
+    const c = Object.assign(document.createElement('canvas'), { width: src.width, height: src.height });
+    const g = c.getContext('2d', { willReadFrequently: true });
+    await withTimeout(new Promise((resolve, reject) => {
+      seg.onResults(r => { try { g.drawImage(r.segmentationMask, 0, 0, c.width, c.height); resolve(); } catch (e){ reject(e); } });
+      seg.send({ image: src }).catch(reject);
+    }), 20000);
+    // Turn the soft "how sure is it a person" values into a clean edge, and find where the person is
+    const d = g.getImageData(0, 0, c.width, c.height), px = d.data;
+    let on = 0, x0 = c.width, y0 = c.height, x1 = 0, y1 = 0;
+    for (let i = 0, n = 0; i < px.length; i += 4, n++){
+      const v = Math.min(1, Math.max(0, (Math.min(px[i], px[i + 3]) / 255 - 0.35) / 0.3));
+      px[i] = px[i + 1] = px[i + 2] = 255; px[i + 3] = Math.round(v * 255);
+      if (v > 0.5){ on++; const x = n % c.width, y = (n - x) / c.width; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    }
+    if (on < c.width * c.height * 0.02) throw new Error('no person');
+    g.putImageData(d, 0, 0);
+    return { canvas: c, box: { x0, y0, x1, y1 } };
+  }
+  $('ed-cut').onclick = async () => {
+    const btn = $('ed-cut'), img = ed.img;
+    if (!img || btn.disabled) return;
+    if (ed.cut){ ed.cut = false; syncEd(); redraw(); return; }
+    if (!ed.mask){
+      btn.disabled = true; btn.textContent = '✂️ Schneidet aus …';
+      try { const m = await personMask(img); if (ed.img === img){ ed.mask = m.canvas; ed.box = m.box; } }
+      catch (err){
+        console.warn(err);
+        if (ed.img === img) toast(err?.message === 'no person' ? 'Keine Person gefunden. Hintergrund weg klappt bei Fotos von Menschen.' : 'Ausschneiden hat nicht geklappt. Versuch es nochmal.');
+      }
+      finally { btn.disabled = false; btn.textContent = '✂️ Hintergrund weg'; }
+      if (ed.img !== img || !ed.mask) return;
+      // First cut: zoom so the person fills the sticker
+      const b = ed.box, bw = b.x1 - b.x0 + 1, bh = b.y1 - b.y0 + 1;
+      ed.s = Math.min(ed.base * 4, Math.max(ed.base * 0.3, Math.min(S * 0.84 / bw, S * 0.84 / bh)));
+      ed.x = S / 2 - ((b.x0 + b.x1) / 2 - img.width / 2) * ed.s;
+      ed.y = S / 2 - ((b.y0 + b.y1) / 2 - img.height / 2) * ed.s;
+    }
+    ed.cut = true; syncEd(); redraw();
+  };
+  for (const b of document.querySelectorAll('#ed-shapes .ed-chip')) b.onclick = () => { ed.shape = b.dataset.shape; store.set('stk-shape', ed.shape); syncEd(); redraw(); };
+  $('ed-outline').onclick = () => { ed.outline = !ed.outline; syncEd(); redraw(); };
+  $('ed-text').addEventListener('input', e => { ed.text = e.target.value.trim(); redraw(); });
+  $('ed-text').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); e.target.blur(); } });
+  $('ed-photo').onclick = () => $('stk-input').click();
+  $('ed-close').onclick = () => { if (!ed.busy) closeEditor(); };
+
+  // Moving with one finger, zooming with two (or the mouse wheel, or the slider)
+  const pts = new Map();
+  function spread(){
+    const a = [...pts.values()], n = a.length || 1;
+    return { x: a.reduce((s, p) => s + p.x, 0) / n, y: a.reduce((s, p) => s + p.y, 0) / n, d: a.length > 1 ? Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y) : 0 };
+  }
+  function zoomAt(px, py, f){
+    const s = Math.min(ed.base * 4, Math.max(ed.base * 0.3, ed.s * f)), k = s / ed.s;
+    ed.x = px + (ed.x - px) * k; ed.y = py + (ed.y - py) * k; ed.s = s;
+  }
+  edCanvas.addEventListener('pointerdown', e => { if (!ed.img) return; edCanvas.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); });
+  edCanvas.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId) || !ed.img) return;
+    const a = spread(); pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); const b = spread();
+    const r = edCanvas.getBoundingClientRect(), k = S / r.width;
+    ed.x += (b.x - a.x) * k; ed.y += (b.y - a.y) * k;
+    if (a.d && b.d) zoomAt((b.x - r.left) * k, (b.y - r.top) * k, b.d / a.d);
+    ed.x = Math.min(S * 1.5, Math.max(-S / 2, ed.x)); ed.y = Math.min(S * 1.5, Math.max(-S / 2, ed.y));
+    $('ed-zoom').value = String(ed.s / ed.base);
+    redraw();
+  });
+  for (const ev of ['pointerup', 'pointercancel']) edCanvas.addEventListener(ev, e => pts.delete(e.pointerId));
+  edCanvas.addEventListener('wheel', e => {
+    if (!ed.img) return;
+    e.preventDefault();
+    const r = edCanvas.getBoundingClientRect(), k = S / r.width;
+    zoomAt((e.clientX - r.left) * k, (e.clientY - r.top) * k, Math.exp(-e.deltaY * 0.0015));
+    $('ed-zoom').value = String(ed.s / ed.base); redraw();
+  }, { passive: false });
+  $('ed-zoom').addEventListener('input', e => { if (!ed.img) return; zoomAt(S / 2, S / 2, ed.base * Number(e.target.value) / ed.s); redraw(); });
+
+  async function finishSticker(send){
+    const gid = current;
+    if (!ed.img || !gid || ed.busy) return;
+    ed.busy = true;
+    const keep = $('ed-keep'), go = $('ed-send');
+    keep.disabled = go.disabled = true;
+    (send ? go : keep).textContent = send ? 'Wird gesendet …' : 'Wird gespeichert …';
+    let path = null;
+    try {
+      cancelAnimationFrame(ed.raf); ed.raf = 0; compose();
+      const blob = await new Promise(r => edCanvas.toBlob(r, 'image/webp', 0.9));
+      if (!blob) throw new Error('no picture');
+      const type = OK_TYPES.includes(blob.type) ? blob.type : 'image/png';
+      path = await upload(gid, blob, extOf(type), type);
+      if (send) await insertMessage(gid, { kind: 'image', text: '', media: { paths: [path], sticker: true } });
+      keepSticker(path);
+      closeEditor();
+      if (!send){ toast('Sticker gespeichert.'); openStickers(); }
+    } catch (err){
+      if (path && send) sb.storage.from('media').remove([path]).catch(() => {});
+      toast(errText(err, send ? 'Sticker senden hat nicht geklappt.' : 'Sticker speichern hat nicht geklappt.'));
+    } finally {
+      ed.busy = false; keep.disabled = go.disabled = false;
+      keep.textContent = 'Speichern'; go.textContent = 'Senden';
+    }
+  }
+  $('ed-keep').onclick = () => finishSticker(false);
+  $('ed-send').onclick = () => finishSticker(true);
+
   // ---------- Composer ----------
   function autosize(){ const t = $('text'); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 160) + 'px'; }
   // The round button is a mic while the field is empty and turns into the send arrow once there is something to send
@@ -1629,6 +1997,8 @@ img{max-width:100%}
     if (!lb.hidden) closeLightbox();
     if (!$('sheet').hidden) closeSheet();
     if (!$('msheet').hidden) closeMember();
+    if (!$('stk-sheet').hidden) closeStickers();
+    else if (!$('ed').hidden && !ed.busy) closeEditor();
   });
   // Another invite link or the admin link opened while Plauderecke is already open
   window.addEventListener('hashchange', async () => {
