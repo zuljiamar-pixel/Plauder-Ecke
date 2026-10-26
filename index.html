@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Plauderecke">
 <title>Plauderecke</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23fffc00'/%3E%3Crect x='5' y='6' width='22' height='16' rx='8' fill='%2316161a'/%3E%3Cpath d='M10 20l-2 6 7-5z' fill='%2316161a'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
@@ -22,6 +22,7 @@
   --yellow:#fffc00; --yellow-ink:#16161a; --me:#f23c57; --friend:#0a9ff0; --online:#0fa968; --danger:#e1251b;
   --p1:#0a9ff0; --p2:#0f9fa8; --p3:#9b55d6; --p4:#5aa312; --p5:#ff8a00; --on-color:#ffffff;
   --chip:#ffffff; --chip-ink:#16161a; --bar:#cfd0d6; --tile:#1b1b20;
+  --pill-line:#d7d7de; --pill-off:#ffffff; --pill-text:#8d8e96;
   --scrim:rgba(0,0,0,.9); --scrim-soft:rgba(0,0,0,.45); --shadow:rgba(0,0,0,.16); --me-glow:rgba(242,60,87,.22);
   --font:"Nunito", "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
   color-scheme:light;
@@ -29,6 +30,7 @@
 @media (prefers-color-scheme: dark){:root{
   --bg:#000000; --panel:#121214; --rail:#0b0b0c; --ink:#f5f5f7; --muted:#8e8f98; --line:#26262b; --field:#222226;
   --me:#ff5a72; --friend:#3dbdff; --online:#34d399; --danger:#ff6b61; --bar:#46474e; --shadow:rgba(0,0,0,.5); --me-glow:rgba(255,90,114,.28);
+  --pill-line:#4f4548; --pill-off:#140e0f; --pill-text:#a39497;
   color-scheme:dark;
 }}
 [hidden]{display:none!important}
@@ -42,7 +44,7 @@ img{max-width:100%}
 .app{height:100%;display:grid;grid-template-columns:290px 1fr;min-height:0}
 .rail{background:var(--rail);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;overflow-y:auto}
 .brand{background:var(--yellow);color:var(--yellow-ink);font-weight:900;font-size:1.4rem;letter-spacing:-.01em;display:flex;align-items:center;gap:10px;padding-block:18px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:16px;flex:none}
-.brand svg{width:28px;height:28px;flex:none}
+.brand img{width:30px;height:30px;flex:none;display:block}
 .rail-body{display:flex;flex-direction:column;gap:18px;padding-block:16px;padding-left:max(12px, env(safe-area-inset-left, 0px));padding-right:12px}
 .label{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:800;padding-left:8px}
 .channels{display:flex;flex-direction:column;gap:2px;list-style:none;margin:0;padding:0}
@@ -97,9 +99,18 @@ img{max-width:100%}
 .empty .bigicon svg{width:38px;height:38px}
 .empty b{font-size:1.35rem;color:var(--ink);font-weight:900}
 
-.typing{min-height:24px;font-size:.82rem;color:var(--muted);font-weight:700;padding-left:20px;padding-right:max(20px, env(safe-area-inset-right, 0px))}
-.typing i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--friend);margin-right:3px;animation:bob 1s infinite}
-.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s;margin-right:8px}
+/* Everyone in the group as a name chip; it lights up in the person's colour while they have the chat open */
+.members{display:flex;align-items:center;gap:8px;overflow-x:auto;scrollbar-width:none;min-height:50px;padding-block:6px 8px;padding-left:20px;padding-right:max(20px, env(safe-area-inset-right, 0px))}
+.members::-webkit-scrollbar{display:none}
+.chip{flex:none;display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 15px;border-radius:999px;border:2px solid var(--pill-line);background:var(--pill-off);color:var(--pill-text);font-size:.8rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;transition:background-color .25s, border-color .25s, color .25s, box-shadow .25s}
+.chip.here{background:var(--c);border-color:var(--c);color:var(--on-color);box-shadow:0 0 16px -4px var(--c)}
+.chip .dots{display:inline-flex;gap:3px}
+.chip .dots i{width:5px;height:5px;border-radius:50%;background:currentColor;animation:bob 1s infinite}
+.chip .dots i:nth-child(2){animation-delay:.15s}
+.chip .dots i:nth-child(3){animation-delay:.3s}
+.chip .eq{margin:0;height:13px}
+.chip .eq b{background:currentColor}
+.chip.add{border-style:dashed;background:none;color:var(--muted);cursor:pointer;text-transform:none;letter-spacing:0}
 @keyframes bob{50%{transform:translateY(-3px)}}
 .eq{display:inline-flex;align-items:center;gap:2px;height:12px;margin-right:8px;vertical-align:-1px}
 .eq b{display:block;width:3px;height:100%;border-radius:2px;background:var(--me);animation:eq .9s ease-in-out infinite}
@@ -202,7 +213,7 @@ img{max-width:100%}
 /* First start: connect, name, first group */
 .gate{position:fixed;inset:0;z-index:25;background:var(--yellow);display:grid;place-items:center;overflow-y:auto;padding:max(20px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px))}
 .gate-card{width:100%;max-width:400px;background:var(--panel);color:var(--ink);border-radius:28px;padding:28px 22px 24px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px var(--shadow)}
-.gate-card svg{width:52px;height:52px}
+.gate-card .logo{width:60px;height:60px;display:block}
 .gate-card h2{margin:0;font-size:1.5rem;font-weight:900;letter-spacing:-.01em;text-wrap:balance}
 .gate-card p{margin:0;color:var(--muted);font-weight:600}
 .gate-card form{display:flex;flex-direction:column;gap:12px}
@@ -214,7 +225,7 @@ img{max-width:100%}
 .lightbox img{max-width:100%;max-height:100%;border-radius:14px;object-fit:contain}
 .lightbox video{max-width:100%;max-height:100%;border-radius:14px;background:var(--tile);cursor:auto}
 .lb-close{position:absolute;top:max(12px, env(safe-area-inset-top, 0px));right:max(12px, env(safe-area-inset-right, 0px));z-index:1;width:40px;height:40px;border-radius:50%;border:0;background:var(--scrim-soft);color:var(--on-color);font-size:1.4rem;font-weight:800;line-height:1;cursor:pointer}
-.toast{position:fixed;z-index:30;left:50%;bottom:calc(84px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 18px;border-radius:999px;font-size:.88rem;font-weight:800;width:max-content;max-width:calc(100% - 32px);text-align:center}
+.toast{position:fixed;z-index:30;left:50%;bottom:calc(136px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 18px;border-radius:999px;font-size:.88rem;font-weight:800;width:max-content;max-width:calc(100% - 32px);text-align:center}
 
 @media (min-width:721px){
   .sheet-wrap{align-items:center}
@@ -238,13 +249,13 @@ img{max-width:100%}
   .newch input{width:120px;background:var(--chip);color:var(--chip-ink)}
   .newch button{background:var(--yellow-ink);color:var(--yellow)}
   .head{gap:10px}
-  .head,.log,.typing,.tray{padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+  .head,.log,.members,.tray{padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
   .pushbar{padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(10px, env(safe-area-inset-right, 0px))}
   .compose{padding-left:max(12px, env(safe-area-inset-left, 0px));padding-right:max(12px, env(safe-area-inset-right, 0px))}
   .lock{right:max(12px, env(safe-area-inset-right, 0px))}
 }
 @media (prefers-reduced-motion: reduce){
-  .typing i,.eq b,.voice.playing .vplay::after,.sheet,.rec-dot,.rec-hint,.lock{animation:none}
+  .chip .dots i,.eq b,.voice.playing .vplay::after,.sheet,.rec-dot,.rec-hint,.lock{animation:none}
 }
 </style>
 </head>
@@ -252,7 +263,7 @@ img{max-width:100%}
 
 <div class="app">
   <aside class="rail">
-    <div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="3" width="28" height="22" rx="11" fill="currentColor"/><path d="M9 23l-2 7 8-6z" fill="currentColor"/><circle cx="11" cy="14" r="2" fill="var(--yellow)"/><circle cx="16" cy="14" r="2" fill="var(--yellow)"/><circle cx="21" cy="14" r="2" fill="var(--yellow)"/></svg><span>Plauderecke</span></div>
+    <div class="brand"><img src="icon-192.png" alt=""><span>Plauderecke</span></div>
     <div class="rail-body">
       <div class="label">Gruppen</div>
       <ul class="channels" id="groups"></ul>
@@ -283,7 +294,7 @@ img{max-width:100%}
       <button class="x" id="pushbar-x" type="button" aria-label="Später">×</button>
     </div>
     <div class="log" id="log" aria-live="polite"></div>
-    <div class="typing" id="typing"></div>
+    <div class="members" id="members"></div>
     <div class="tray" id="tray" hidden></div>
     <form class="compose" id="compose">
       <button class="tool" id="cam-btn" type="button" aria-label="Foto oder Video aufnehmen" title="Foto oder Video aufnehmen" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
@@ -337,7 +348,7 @@ img{max-width:100%}
 
 <div class="gate" id="gate" hidden>
   <div class="gate-card">
-    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="3" width="28" height="22" rx="11" fill="var(--ink)"/><path d="M9 23l-2 7 8-6z" fill="var(--ink)"/><circle cx="11" cy="14" r="2" fill="var(--yellow)"/><circle cx="16" cy="14" r="2" fill="var(--yellow)"/><circle cx="21" cy="14" r="2" fill="var(--yellow)"/></svg>
+    <img class="logo" src="icon-192.png" alt="">
     <h2 id="gate-title"></h2>
     <p id="gate-text"></p>
     <form id="gate-form"></form>
@@ -702,15 +713,33 @@ img{max-width:100%}
       row.append(avatar(p.uid, p.isMe ? myName : p.name), label); on.append(row);
       if (!p.isMe && faces.children.length < 5) faces.append(avatar(p.uid, p.name));
     }
-    const recs = others.filter(p => p.rec).map(p => p.name), typers = others.filter(p => p.typing && !p.rec).map(p => p.name);
-    const ty = $('typing'); ty.replaceChildren();
-    if (recs.length){
-      const eq = document.createElement('span'); eq.className = 'eq';
-      for (let i = 0; i < 4; i++) eq.append(document.createElement('b'));
-      ty.append(eq, recs.length === 1 ? `${recs[0]} nimmt eine Sprachnachricht auf …` : `${recs.length} nehmen Sprachnachrichten auf …`);
-    } else if (typers.length){
-      ty.append(document.createElement('i'), document.createElement('i'), document.createElement('i'));
-      ty.append(typers.length === 1 ? `${typers[0]} tippt …` : typers.length === 2 ? `${typers[0]} und ${typers[1]} tippen …` : 'Mehrere tippen …');
+    // A chip for every friend in this group, lit up while they are here, with dots while typing
+    const here = new Map(others.map(p => [p.uid, p]));
+    const prefix = current + ':', mates = [];
+    for (const [k, n] of names) if (k.startsWith(prefix) && k.slice(prefix.length) !== me) mates.push({ uid: k.slice(prefix.length), name: n });
+    for (const p of others) if (!mates.some(m => m.uid === p.uid)) mates.push({ uid: p.uid, name: p.name });
+    mates.sort((a, b) => (here.has(b.uid) - here.has(a.uid)) || a.name.localeCompare(b.name, 'de'));
+    const strip = $('members'); strip.replaceChildren();
+    for (const m of mates){
+      const p = here.get(m.uid), name = m.name || 'Jemand';
+      const chip = document.createElement('span'); chip.className = 'chip' + (p ? ' here' : '');
+      chip.style.setProperty('--c', colorFor(m.uid));
+      chip.append(name);
+      if (p?.rec){
+        const eq = document.createElement('span'); eq.className = 'eq';
+        for (let i = 0; i < 4; i++) eq.append(document.createElement('b'));
+        chip.append(eq);
+      } else if (p?.typing){
+        const dots = document.createElement('span'); dots.className = 'dots';
+        dots.append(document.createElement('i'), document.createElement('i'), document.createElement('i'));
+        chip.append(dots);
+      }
+      chip.title = !p ? `${name} ist gerade nicht da` : p.rec ? `${name} nimmt eine Sprachnachricht auf` : p.typing ? `${name} schreibt gerade` : `${name} ist gerade da`;
+      strip.append(chip);
+    }
+    if (!mates.length){
+      const add = Object.assign(document.createElement('button'), { type: 'button', className: 'chip add', textContent: '+ Freunde einladen' });
+      add.onclick = openSheet; strip.append(add);
     }
     if (!sending) $('status').textContent = others.length ? `${others.length + 1} online` : 'Nur du bist gerade da';
   }
