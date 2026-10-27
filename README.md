@@ -143,7 +143,7 @@ So geht's:
 
 1. **Video auswählen** antippen. Die Website hört sich den Ton an und misst die Bewegung. Laute, wilde und bewegte Stellen bekommen Punkte.
 2. Unter dem Video zeigt eine Leiste, wo es spannend ist. Gelb sind die Stellen, die in den Clip kommen.
-3. Wähle die **Länge** (15 Sekunden bis 3 Minuten), die **Auswahl** (**Ganze Geschichte** nimmt Stellen vom Anfang bis zum Schluss, **Nur die Highlights** nur die spannendsten), den **Schnitt** (viele kurze oder wenige lange Stellen) und das **Format** (wie das Original oder Hochformat 9:16 für TikTok, Reels und Shorts).
+3. Wähle die **Länge** (15 Sekunden bis 3 Minuten), die **Auswahl** (**Nur Geschichte** nimmt Stellen vom Anfang bis zum Schluss, **Nur Edit** nur die spannendsten Stellen, **Beides** halb und halb), den **Schnitt** (viele kurze oder wenige lange Stellen) und das **Format** (wie das Original oder Hochformat 9:16 für TikTok, Reels und Shorts).
 4. Bei jeder Stelle: antippen zum Abspielen, **−** kürzer, **+** länger, **×** weg (dafür kommt eine andere). **Stelle dazunehmen** nimmt die Stelle beim pinken Strich dazu. **Vorschau** spielt alle Stellen hintereinander.
 5. **Clip machen**, dann **Herunterladen**. Auf dem Handy gibt es auch **Teilen**, zum Beispiel in die Fotos oder zu WhatsApp.
 
