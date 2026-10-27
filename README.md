@@ -6,6 +6,7 @@ In diesem Ordner liegen:
 
 - `index.html`: die Website
 - `setup.sql`: richtet die Datenbank ein
+- `clip/index.html`: die Clip-Ecke, macht aus langen Videos kurze Clips (siehe unten)
 
 ## Teil 1: Supabase einrichten
 
@@ -130,6 +131,27 @@ So geht's in der App:
 - **@ tippen:** Die Namen aus dem Chat erscheinen zum Antippen. `@alle` erwähnt alle. Wer erwähnt wird, sieht seinen Namen gelb und bekommt eine Benachrichtigung, auch wenn der Chat stumm ist.
 - **Eigene Nachricht gedrückt halten › Bearbeiten:** Danach steht „bearbeitet“ dabei.
 - **Hintergrund:** Eine Farbe oder ein eigenes Foto. Alle im Chat sehen den gleichen.
+
+## Clip-Ecke: lange Videos kürzen
+
+Im Ordner `clip` liegt eine zweite Website. Sie macht aus einem langen Video (zum Beispiel 13 Minuten) einen kurzen Clip mit den besten Stellen, etwa 1 Minute lang, zum Herunterladen.
+
+- Adresse: deine Plauderecke-Adresse mit `clip/` am Ende, zum Beispiel `https://DEINNAME.github.io/plauderecke/clip/`. Wer die Website von Hand hochlädt, lädt auch den Ordner `clip` mit seiner `index.html` hoch.
+- Supabase braucht es dafür nicht. Das Video bleibt auf dem Handy oder Computer, nichts wird hochgeladen.
+
+So geht's:
+
+1. **Video auswählen** antippen. Die Website hört sich den Ton an und misst die Bewegung. Laute, wilde und bewegte Stellen bekommen Punkte.
+2. Unter dem Video zeigt eine Leiste, wo es spannend ist. Gelb sind die Stellen, die in den Clip kommen.
+3. Wähle die **Länge** (15 Sekunden bis 3 Minuten), den **Schnitt** (viele kurze oder wenige lange Stellen) und das **Format** (wie das Original oder Hochformat 9:16 für TikTok, Reels und Shorts).
+4. Bei jeder Stelle: antippen zum Abspielen, **−** kürzer, **+** länger, **×** weg (dafür kommt eine andere). **Stelle dazunehmen** nimmt die Stelle beim pinken Strich dazu. **Vorschau** spielt alle Stellen hintereinander.
+5. **Clip machen**, dann **Herunterladen**. Auf dem Handy gibt es auch **Teilen**, zum Beispiel in die Fotos oder zu WhatsApp.
+
+Gut zu wissen:
+
+- Am besten mit der neusten Version von Chrome, Edge oder Safari. Lass die Seite offen, bis der Clip fertig ist.
+- iPhone-Videos im Format HEVC gehen nicht in jedem Browser. Dann Safari oder Chrome nehmen, oder auf dem iPhone unter Einstellungen › Kamera › Formate **Maximale Kompatibilität** wählen.
+- Mit 1 Minute passt der Clip auch in die Plauderecke, dort dürfen Videos höchstens 60 Sekunden lang sein.
 
 ## Gut zu wissen
 
