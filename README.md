@@ -141,11 +141,13 @@ Im Ordner `clip` liegt eine zweite Website. Sie macht aus einem langen Video (zu
 
 So geht's:
 
-1. **Video auswählen** antippen. Die Website hört sich den Ton an und misst die Bewegung. Laute, wilde und bewegte Stellen bekommen Punkte.
-2. Unter dem Video zeigt eine Leiste, wo es spannend ist. Gelb sind die Stellen, die in den Clip kommen.
-3. Wähle die **Länge** (15 Sekunden bis 3 Minuten), die **Auswahl** (**Nur Geschichte** nimmt Stellen vom Anfang bis zum Schluss, **Nur Edit** nur die spannendsten Stellen, **Beides** halb und halb), den **Schnitt** (viele kurze oder wenige lange Stellen) und das **Format** (wie das Original oder Hochformat 9:16 für TikTok, Reels und Shorts).
-4. Bei jeder Stelle: antippen zum Abspielen, **−** kürzer, **+** länger, **×** weg (dafür kommt eine andere). **Stelle dazunehmen** nimmt die Stelle beim pinken Strich dazu. **Vorschau** spielt alle Stellen hintereinander.
-5. **Clip machen**, dann **Herunterladen**. Auf dem Handy gibt es auch **Teilen**, zum Beispiel in die Fotos oder zu WhatsApp.
+1. **Video auswählen** antippen. Die Website hört sich den Ton an und misst die Bewegung. Wo geredet wird, wird es **Geschichte**. Laute, wilde und bewegte Stellen werden **Edit**.
+2. Unter dem Video zeigt eine Leiste, wo es spannend ist. Gelb sind die Stellen für die Geschichte, blau die für den Edit.
+3. **Auswahl:** **Nur Geschichte** (Szenen vom Anfang bis zum Schluss, mit Originalton), **Nur Edit** (die spannendsten Stellen, schnell geschnitten) oder **Beides** (zuerst die Geschichte, dann der Edit, wie bei TikTok-Edits).
+4. **Song für den Edit:** Eine MP3- oder M4A-Datei wählen. Die Website findet den Beat, die Schnitte im Edit kommen genau darauf, und der stärkste Teil vom Song läuft im Edit. Unter der Geschichte läuft er leise mit.
+5. **Look im Edit** (Normal, Schwarzweiß, Kino), **Länge** (15 Sekunden bis 3 Minuten), **Schnitt** (viele kurze oder wenige lange Stellen), **Format** (wie das Original oder Hochformat 9:16) und ein **Titel am Schluss** in roter Schrift.
+6. Bei jeder Stelle: antippen zum Abspielen, **T** für Text im Bild (zum Beispiel „WHO DID?“), **−** kürzer, **+** länger, **×** weg (dafür kommt eine andere). **Stelle dazunehmen** nimmt die Stelle beim pinken Strich dazu. **Vorschau** spielt alles hintereinander, mit Song und Look.
+7. **Clip machen**, dann **Herunterladen**. Auf dem Handy gibt es auch **Teilen**, zum Beispiel in die Fotos oder zu WhatsApp.
 
 Gut zu wissen:
 

@@ -18,6 +18,7 @@
   --bg:#f2f2f4; --panel:#ffffff; --ink:#16161a; --muted:#6c6d77; --line:#dedee5; --field:#efeff3;
   --yellow:#fffc00; --yellow-ink:#16161a; --yellow-edge:#d6d100; --pink:#f23c57; --blue:#0a8fd8; --danger:#d42318;
   --track:#1b1b20; --track-line:#34343c; --track-curve:#5d5e69; --track-sel:rgba(255,252,0,.2); --track-ink:#b9bac4;
+  --edit:#2fb6ff; --edit-ink:#06121c; --track-sel-edit:rgba(47,182,255,.22);
   --screen:#000000; --on-media:#ffffff; --scrim:rgba(12,12,16,.6); --lift:0 1px 2px rgba(22,22,26,.05), 0 6px 20px rgba(22,22,26,.06);
   --font:"Nunito", "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
   color-scheme:light;
@@ -98,7 +99,7 @@ h1,h2{text-wrap:balance}
 .stage{display:grid;gap:8px;min-width:0}
 .player{position:relative;background:var(--screen);border-radius:16px;overflow:hidden}
 .player video{display:block;width:100%;max-height:62vh;background:var(--screen)}
-.player p{position:absolute;inset:auto 10px 10px;margin:0;padding:8px 12px;border-radius:10px;background:var(--scrim);color:var(--on-media);font-size:.85rem}
+.player #noPreview{position:absolute;inset:auto 10px 10px;margin:0;padding:8px 12px;border-radius:10px;background:var(--scrim);color:var(--on-media);font-size:.85rem}
 .stage-tools{display:flex;gap:8px;flex-wrap:wrap}
 .stage-tools .btn{flex:1 1 auto;min-height:42px;padding:8px 14px;font-size:.95rem}
 .side{display:grid;gap:14px;min-width:0}
@@ -108,6 +109,21 @@ h1,h2{text-wrap:balance}
 .opts{background:var(--panel);border-radius:20px;padding:14px;display:grid;gap:12px;box-shadow:var(--lift)}
 .opt{display:grid;gap:6px}
 .opt-hint{font-size:.84rem;color:var(--muted);font-weight:700}
+.music{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.music .opt-hint{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.music .tool{width:32px;height:32px}
+.field{width:100%;min-height:42px;padding:8px 14px;border:0;border-radius:12px;background:var(--field);color:var(--ink);font-weight:800}
+.field::placeholder{color:var(--muted);font-weight:700}
+.parthead{display:flex;align-items:center;gap:8px;padding:6px 4px 0;font-size:.82rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.swatch.edit{background:var(--edit);box-shadow:none}
+.thumb i.edit{background:var(--edit);color:var(--edit-ink)}
+.clip{flex-wrap:wrap}
+.tool.on{background:var(--ink);color:var(--panel)}
+.captext{flex:1 1 100%;display:flex;gap:6px;padding:2px 2px 2px 72px}
+.captext input{flex:1;min-width:0;min-height:40px;padding:6px 12px;border:0;border-radius:10px;background:var(--field);color:var(--ink);font-weight:800;text-transform:uppercase}
+.captext .btn{min-height:40px;padding:6px 14px;font-size:.9rem}
+.capview{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:0 8%;text-align:center;pointer-events:none;color:var(--on-media);font-weight:900;font-size:clamp(1.2rem, 5vw, 2.4rem);line-height:1.1;text-transform:uppercase;text-shadow:0 2px 12px rgba(0,0,0,.75)}
+@media (max-width: 420px){.captext{padding-left:2px}}
 .opt-label{font-size:.78rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{border:0;background:var(--field);color:var(--ink);font-weight:800;font-size:.92rem;min-height:38px;padding:7px 13px;border-radius:999px;cursor:pointer}
@@ -197,8 +213,8 @@ h1,h2{text-wrap:balance}
         <h2 id="howTitle">So geht's</h2>
         <ol class="steps">
           <li><span><b>Video wählen.</b> Zum Beispiel 13 Minuten vom Ausflug, vom Training oder vom Zocken.</span></li>
-          <li><span><b>Die Website hört und schaut zu.</b> Laute, wilde und bewegte Stellen bekommen Punkte.</span></li>
-          <li><span><b>Die besten Stellen kommen zusammen,</b> bis die Länge passt. Du kannst Stellen tauschen, kürzer oder länger machen und eigene dazunehmen.</span></li>
+          <li><span><b>Die Website hört und schaut zu.</b> Wo geredet wird, wird es Geschichte. Laute, wilde und bewegte Stellen werden Edit.</span></li>
+          <li><span><b>Zuerst die Geschichte, dann der Edit,</b> wie bei TikTok-Edits. Mit eigenem Song kommen die Schnitte auf den Beat, dazu Schwarzweiß, Text im Bild und ein Titel am Schluss.</span></li>
           <li><span><b>Clip herunterladen.</b> Als MP4, das auf jedem Handy läuft.</span></li>
         </ol>
         <figure class="example">
@@ -213,10 +229,11 @@ h1,h2{text-wrap:balance}
       <div class="stage">
         <div class="player">
           <video id="video" playsinline controls preload="auto"></video>
+          <p id="capView" class="capview" hidden></p>
           <p id="noPreview" hidden>Dein Browser kann dieses Video hier nicht abspielen. Der Clip klappt trotzdem.</p>
         </div>
         <canvas id="track" class="track" tabindex="0" role="slider" aria-label="Zeit im Video" aria-valuemin="0"></canvas>
-        <div class="legend"><span>0:00</span><span><span class="swatch"></span> im Clip</span><span id="durLabel">0:00</span></div>
+        <div class="legend"><span>0:00</span><span><span id="legendStory"><span class="swatch"></span> Geschichte</span> &nbsp; <span id="legendEdit"><span class="swatch edit"></span> Edit</span></span><span id="durLabel">0:00</span></div>
         <div class="stage-tools">
           <button type="button" id="previewBtn" class="btn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l10.5-6.5z"/></svg><span>Vorschau</span></button>
           <button type="button" id="addBtn" class="btn" title="Nimmt die Stelle beim pinken Strich dazu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>Stelle dazunehmen</span></button>
@@ -228,9 +245,16 @@ h1,h2{text-wrap:balance}
         <div class="opts">
           <div class="opt"><span class="opt-label" id="lblTarget">Länge</span><div class="chips" role="radiogroup" aria-labelledby="lblTarget" data-opt="target"></div></div>
           <div class="opt"><span class="opt-label" id="lblOrder">Auswahl</span><div class="chips" role="radiogroup" aria-labelledby="lblOrder" data-opt="order"></div><span class="opt-hint" id="orderHint"></span></div>
+          <div class="opt" id="musicOpt"><span class="opt-label">Song für den Edit</span>
+            <div class="music"><button type="button" id="musicBtn" class="chip">Song auswählen</button><span id="musicName" class="opt-hint"></span><button type="button" id="musicDel" class="tool" aria-label="Song entfernen" title="Song entfernen" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="m7 7 10 10M17 7 7 17"/></svg></button></div>
+            <span class="opt-hint">Die Schnitte kommen auf den Beat. Ohne Song bleibt der Ton vom Video.</span>
+            <input type="file" id="musicFile" accept="audio/*,.mp3,.m4a,.aac,.wav" hidden>
+          </div>
+          <div class="opt" id="lookOpt"><span class="opt-label" id="lblLook">Look im Edit</span><div class="chips" role="radiogroup" aria-labelledby="lblLook" data-opt="look"></div></div>
           <div class="opt"><span class="opt-label" id="lblTempo">Schnitt</span><div class="chips" role="radiogroup" aria-labelledby="lblTempo" data-opt="tempo"></div></div>
           <div class="opt" id="focusOpt"><span class="opt-label" id="lblFocus">Achte auf</span><div class="chips" role="radiogroup" aria-labelledby="lblFocus" data-opt="focus"></div></div>
           <div class="opt"><span class="opt-label" id="lblFormat">Format</span><div class="chips" role="radiogroup" aria-labelledby="lblFormat" data-opt="format"></div></div>
+          <div class="opt"><label class="opt-label" for="titleText">Titel am Schluss</label><input id="titleText" class="field" maxlength="30" placeholder="z.B. dein Name, leer = kein Titel" autocomplete="off"></div>
           <p id="editNote" class="note" hidden></p>
         </div>
         <div class="listhead"><h2>Stellen im Clip</h2><span id="listSum"></span><button type="button" id="resetBtn" class="link" hidden>Zurücksetzen</button></div>
@@ -274,21 +298,34 @@ h1,h2{text-wrap:balance}
 <noscript><p class="alert">Die Clip-Ecke braucht JavaScript.</p></noscript>
 
 <script type="module">
-// Clip-Ecke: finds the loud, busy moments of a long video and cuts them into one short clip.
-// Everything runs in the browser with Mediabunny (WebCodecs), so the video never leaves the device.
+// Clip-Ecke: turns a long video into a short clip like a TikTok edit. The story part takes scenes where
+// people talk, from the beginning to the end, with the original sound; the edit part takes the most exciting
+// moments, cut on the beat of a song if one is chosen. Everything runs in the browser with Mediabunny
+// (WebCodecs) and Web Audio, so the video never leaves the device.
 const MB_URL = 'https://cdn.jsdelivr.net/npm/mediabunny@1.61.4/dist/bundles/mediabunny.min.mjs';
 const AAC_URL = 'https://cdn.jsdelivr.net/npm/@mediabunny/aac-encoder@1.61.4/dist/bundles/mediabunny-aac-encoder.min.js';
 const HOP = 0.25;      // the video is scored in steps of a quarter second
-const MIN_CLIP = 2;    // no piece is shorter than this
+const FRAME = 0.05;    // the sound is also measured in 50 ms steps, to find the pauses between sentences
+const MIN_CLIP = 2;    // no piece is shorter than this (except cuts on a fast beat)
 const GAP = 2;         // two pieces are at least this far apart, so the cuts look intended
 const FADE = 0.012;    // short sound fade at every cut, so it doesn't click
-const TEMPO = { short: 3.5, mix: 6, long: 11 };
+const TITLE_LEN = 2.2; // seconds of the title at the end
+const TEMPO = { short: 3.5, mix: 6, long: 11 };   // edit pieces without a song
+const STORY = { short: 5, mix: 8, long: 13 };     // story scenes
+const CUT = { short: 0.9, mix: 1.8, long: 3.6 };  // seconds between cuts on the beat
+const LOOK = { normal: 'none', bw: 'grayscale(1) contrast(1.3) brightness(0.92)', cinema: 'contrast(1.2) saturate(0.65) brightness(0.9)' };
 const CHOICES = {
   target: [[15, '15 s'], [30, '30 s'], [45, '45 s'], [60, '1 Min.'], [90, '1½ Min.'], [120, '2 Min.'], [180, '3 Min.']],
   order: [['story', 'Nur Geschichte'], ['best', 'Nur Edit'], ['both', 'Beides']],
+  look: [['normal', 'Normal'], ['bw', 'Schwarzweiß'], ['cinema', 'Kino']],
   tempo: [['short', 'Viele kurze'], ['mix', 'Gemischt'], ['long', 'Wenige lange']],
   focus: [['both', 'Ton + Bewegung'], ['sound', 'Nur Ton'], ['motion', 'Nur Bewegung']],
   format: [['orig', 'Wie das Original'], ['tall', 'Hochformat 9:16']],
+};
+const ORDER_HINT = {
+  story: 'Szenen, in denen geredet wird, vom Anfang bis zum Schluss, mit dem Originalton.',
+  best: 'Die spannendsten Stellen, schnell geschnitten. Mit Song kommen die Schnitte auf den Beat.',
+  both: 'Zuerst die Geschichte mit Originalton, dann der Edit mit Song, wie bei TikTok-Edits.',
 };
 const WEIGHTS = {
   both: { loud: .35, lift: .3, bright: .1, motion: .25 },
@@ -302,12 +339,7 @@ const store = {
   get(k){ try { return localStorage.getItem('clipecke.' + k); } catch { return null; } },
   set(k, v){ try { localStorage.setItem('clipecke.' + k, v); } catch {} },
 };
-const opts = { target: 60, order: 'both', tempo: 'mix', focus: 'both', format: 'orig' };
-const ORDER_HINT = {
-  story: 'Stellen vom Anfang bis zum Schluss, so sieht man, was alles passiert ist.',
-  best: 'Nur die spannendsten Stellen, egal wo sie im Video sind.',
-  both: 'Die Hälfte erzählt das ganze Video, die andere Hälfte sind die spannendsten Stellen.',
-};
+const opts = { target: 60, order: 'both', look: 'bw', tempo: 'mix', focus: 'both', format: 'orig' };
 try {
   const saved = JSON.parse(store.get('opts') || '{}');
   for (const k of Object.keys(opts)) if (CHOICES[k].some(([v]) => v === saved[k])) opts[k] = saved[k];
@@ -319,7 +351,7 @@ const mbReady = import(MB_URL).then(m => (MB = m), e => { console.error(e); retu
 const host = window.claude && typeof window.claude.use === 'function' ? window.claude : null;
 const downloadsReady = host ? host.use('downloads').catch(() => null) : Promise.resolve(null);
 
-const S = { token: 0, clips: [], pinned: [], banned: [] };
+const S = { token: 0, clips: [], pinned: [], banned: [], song: null };
 let job = null;
 class Cancelled extends Error {}
 const check = j => { if (j.cancelled) throw new Cancelled(); };
@@ -335,12 +367,14 @@ const fmtLen = t => {
   return t < 60 ? `${t} s` : `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')} Min.`;
 };
 const lengthOf = list => list.reduce((a, c) => a + c.end - c.start, 0);
+const byStart = (a, b) => a.start - b.start;
 const even = x => Math.max(2, Math.round(x / 2) * 2);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 let toastTimer = 0;
 function toast(text){
   const el = $('toast');
   el.textContent = text; el.hidden = false;
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 2600);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 2800);
 }
 function show(view){
   for (const v of ['start', 'edit', 'done']) $(v).hidden = v !== view;
@@ -348,7 +382,11 @@ function show(view){
   window.scrollTo(0, 0);
 }
 const busy = {
-  open(title, text){ $('busyTitle').textContent = title; this.text(text); this.set(0); $('cancelBtn').disabled = false; $('busy').hidden = false; $('cancelBtn').focus({ preventScroll: true }); },
+  open(title, text, cancellable = true){
+    $('busyTitle').textContent = title; this.text(text); this.set(0);
+    $('cancelBtn').disabled = false; $('cancelBtn').hidden = !cancellable; $('busy').hidden = false;
+    if (cancellable) $('cancelBtn').focus({ preventScroll: true });
+  },
   text(t){ $('busyText').textContent = t; },
   set(p){
     p = clamp(p, 0, 1);
@@ -383,7 +421,7 @@ function explain(e){
 }
 const canEdit = () => typeof VideoDecoder === 'function' && typeof VideoEncoder === 'function' && typeof VideoFrame === 'function';
 
-// ---------- Scoring: turn sound and movement into one "how exciting" value per quarter second ----------
+// ---------- Scoring: turn sound and movement into "how exciting" and "how much talking" per quarter second ----------
 function smooth(a, w){
   const n = a.length, out = new Float32Array(n), P = new Float64Array(n + 1);
   for (let i = 0; i < n; i++) P[i + 1] = P[i] + a[i];
@@ -401,6 +439,7 @@ function robust(a, floor){
   for (let i = 0; i < a.length; i++) dev[i] = Math.abs(a[i] - med);
   return { med, spread: Math.max(1.4826 * median(dev), floor) };
 }
+const zScores = (a, floor) => { const r = robust(a, floor); return a.map(v => clamp((v - r.med) / r.spread, -3, 3)); };
 // How loud it is around each moment (half a minute), so "louder than usual" can count too
 function localMedian(a, win){
   const n = a.length, out = new Float32Array(n), step = n > 8000 ? 4 : 1, h = win >> 1, tmp = new Float32Array(win + 1);
@@ -413,92 +452,147 @@ function localMedian(a, win){
   }
   return out;
 }
+function percentile(a, p){ const s = Float32Array.from(a).sort(); return s.length ? s[Math.floor(p * (s.length - 1))] : 0; }
 function computeScore(){
   const { n, audio, motion } = S;
   let w = { ...WEIGHTS[opts.focus] };
   if (!audio) w = { loud: 0, lift: 0, bright: 0, motion: 1 };
   if (!motion){ w.motion = 0; if (!w.loud && !w.lift) w = { ...WEIGHTS.sound }; }
   const sum = w.loud + w.lift + w.bright + w.motion || 1;
-  const score = new Float32Array(n);
-  const add = (arr, weight) => { if (weight) for (let i = 0; i < n; i++) score[i] += arr[i] * weight / sum; };
+  const score = new Float32Array(n), story = new Float32Array(n);
+  const add = (to, arr, weight) => { if (weight) for (let i = 0; i < n; i++) to[i] += arr[i] * weight; };
+  const M = motion ? zScores(smooth(motion, 4), 0.12) : null;
   if (audio){
     const L = smooth(audio.loud, 4), r = robust(L, 3), local = localMedian(L, 120);
-    const B = smooth(audio.bright, 4), rb = robust(B, 1.5);
-    add(L.map(v => clamp((v - r.med) / r.spread, -3, 3)), w.loud);
-    add(L.map((v, i) => clamp((v - local[i]) / r.spread, -3, 3)), w.lift);
-    add(B.map(v => clamp((v - rb.med) / rb.spread, -3, 3)), w.bright);
-    for (let i = 0; i < n; i++) if (L[i] < r.med - 20) score[i] -= 1;   // near silence is never a highlight
+    const loud = L.map(v => clamp((v - r.med) / r.spread, -3, 3));
+    add(score, loud, w.loud / sum);
+    add(score, L.map((v, i) => clamp((v - local[i]) / r.spread, -3, 3)), w.lift / sum);
+    add(score, zScores(smooth(audio.bright, 4), 1.5), w.bright / sum);
+    // the story looks for talking: steady speech that is loud enough, with a bit of movement
+    add(story, zScores(smooth(audio.speech, 8), 1), 0.6);
+    add(story, loud, 0.25);
+    for (let i = 0; i < n; i++) if (L[i] < r.med - 20){ score[i] -= 1; story[i] -= 1; }   // near silence is never wanted
   }
-  if (motion){
-    const M = smooth(motion, 4), r = robust(M, 0.12);
-    add(M.map(v => clamp((v - r.med) / r.spread, -3, 3)), w.motion);
+  if (M){
+    add(score, M, w.motion / sum);
+    add(story, M, audio ? 0.15 : 1);
   }
   S.score = score;
+  S.storyScore = story;
   S.view = smooth(score, 8);
   S.lo = percentile(S.view, 0.05); S.hi = percentile(S.view, 1);
 }
-function percentile(a, p){ const s = Float32Array.from(a).sort(); return s.length ? s[Math.floor(p * (s.length - 1))] : 0; }
 
-// Picks the best windows until the wanted length is reached: own pieces stay, removed places stay out,
-// and every new piece keeps some distance from the others
-function pick(score, dur, o){
-  const n = score.length;
-  if (dur <= o.target + 0.5) return carve(dur, o.banned);
-  const L = Math.max(MIN_CLIP, Math.min(TEMPO[o.tempo] || TEMPO.mix, o.target / 2));
-  const P = new Float64Array(n + 1);
+// Picks the best free windows of a score until the budget (seconds) is used.
+// o.L: usual length; o.fixed: every window exactly o.L long (cuts on the beat); o.spread: first one window
+// from each equal part of the video, so it runs from the beginning to the end; o.avoid: pieces to keep
+// away from (o.gap seconds); o.banned: removed places.
+function pickWindows(score, dur, budget, o){
+  const n = score.length, P = new Float64Array(n + 1);
   for (let i = 0; i < n; i++) P[i + 1] = P[i] + score[i];
   const blocked = new Uint8Array(n), B = new Int32Array(n + 1);
   const block = (s, e, pad) => blocked.fill(1, Math.max(0, Math.floor((s - pad) / HOP)), Math.min(n, Math.ceil((e + pad) / HOP)));
   for (const r of o.banned) block(r.start, r.end, 1);   // a removed place shouldn't come back shifted by a second
-  const clips = o.pinned.map(c => ({ start: c.start, end: c.end, pinned: true }));
-  for (const c of clips) block(c.start, c.end, GAP);
-  let left = o.target - lengthOf(clips);
+  for (const c of o.avoid) block(c.start, c.end, o.gap);
+  const out = [], least = o.fixed ? o.L : MIN_CLIP;
+  let left = budget;
   // The best free window between bins lo and hi, at most cap seconds long
   const best = (lo, hi, cap) => {
     for (let i = 0; i < n; i++) B[i + 1] = B[i] + blocked[i];
-    const lens = new Set([0.7, 1, 1.4].map(f => Math.max(Math.ceil(MIN_CLIP / HOP), Math.floor(Math.min(left, cap, f * L) / HOP + 1e-6))));
+    const lens = o.fixed ? new Set([Math.max(1, Math.round(o.L / HOP))])
+      : new Set([0.7, 1, 1.4].map(f => Math.max(Math.ceil(MIN_CLIP / HOP), Math.floor(Math.min(left, cap, f * o.L) / HOP + 1e-6))));
     let top = -Infinity, bi = -1, bk = 0;
     for (const k of lens){
-      const bonus = 0.35 * Math.log(k * HOP / L);   // a long, steady stretch may beat a short spike
+      const bonus = o.fixed ? 0 : 0.35 * Math.log(k * HOP / o.L);   // a long, steady stretch may beat a short spike
       for (let i = lo; i + k <= hi; i++){
         if (B[i + k] !== B[i]) continue;
         const v = (P[i + k] - P[i]) / k + bonus;
         if (v > top){ top = v; bi = i; bk = k; }
       }
     }
-    return bi < 0 ? null : { start: bi * HOP, end: Math.min(dur, (bi + bk) * HOP), pinned: false };
+    if (bi < 0) return null;
+    const start = bi * HOP, end = Math.min(dur, o.fixed ? start + o.L : (bi + bk) * HOP);
+    return end - start >= Math.min(1, least) ? { start, end } : null;
   };
-  const take = c => { clips.push(c); left -= c.end - c.start; block(c.start, c.end, GAP); };
-  // The story: the video is split into equal parts and each part gives its best moment, so the clip
-  // runs from the beginning to the end. "Nur Geschichte" spends all the time on it, "Beides" half;
-  // parts that already have an own clip count as done. The rest goes to the best moments anywhere.
-  let story = Math.min(left, o.order === 'story' ? o.target : o.order === 'both' ? o.target / 2 : 0);
-  if (story >= MIN_CLIP){
-    const count = Math.max(1, Math.min(Math.floor(story / L), Math.floor(dur / (L + GAP))));
+  const take = c => { out.push(c); left -= c.end - c.start; block(c.start, c.end, o.gap); };
+  if (o.spread){
+    const count = Math.max(1, Math.min(Math.floor(budget / o.L), Math.floor(dur / (o.L + o.gap))));
     const open = [];
     for (let p = 0; p < count; p++){
       const a = p * dur / count, b = (p + 1) * dur / count;
-      if (!clips.some(c => (c.start + c.end) / 2 >= a && (c.start + c.end) / 2 < b)) open.push([a, b]);
+      if (!(o.have || []).some(c => (c.start + c.end) / 2 >= a && (c.start + c.end) / 2 < b)) open.push([a, b]);
     }
     for (const [k, [a, b]] of open.entries()){
-      if (story < MIN_CLIP) break;
-      const c = best(Math.floor(a / HOP), Math.min(n, Math.ceil(b / HOP)), story / (open.length - k));
-      if (c && c.end - c.start >= 1){ take(c); story -= c.end - c.start; }
+      if (left < least) break;
+      const c = best(Math.floor(a / HOP), Math.min(n, Math.ceil(b / HOP)), left / (open.length - k));
+      if (c) take(c);
     }
   }
-  while (left >= MIN_CLIP){
+  while (left >= least - 1e-6){
     const c = best(0, n, Infinity);
-    if (!c || c.end - c.start < 1) break;
+    if (!c) break;
     take(c);
   }
-  return clips.sort((a, b) => a.start - b.start);
+  return out;
 }
 // A video that is already short enough goes in whole, minus the places that were removed
 function carve(dur, banned){
   let parts = [{ start: 0, end: dur }];
   for (const b of banned) parts = parts.flatMap(p => b.end <= p.start || b.start >= p.end ? [p]
     : [{ start: p.start, end: b.start }, { start: b.end, end: p.end }].filter(q => q.end - q.start >= 1));
-  return parts.map(p => ({ ...p, pinned: false }));
+  return parts;
+}
+// Moves the edges of a story scene into the nearest pause (within 0.8 s), so sentences aren't cut off
+function toPauses(c){
+  const f = S.frames;
+  if (!f) return c;
+  const quietest = (t, lo, hi) => {
+    let best = t, low = Infinity;
+    for (let x = Math.max(0, t - lo); x <= Math.min(S.dur, t + hi); x += FRAME){
+      const v = f[Math.round(x / FRAME)];
+      if (v < low - 0.5){ low = v; best = x; }
+    }
+    return best;
+  };
+  const start = quietest(c.start, 0.8, 0.8), end = quietest(c.end, 0.8, 0.8);
+  return end - start >= MIN_CLIP ? { ...c, start, end } : c;
+}
+// Seconds between two cuts when a song is chosen: a whole number of beats close to the wanted pace
+function beatCut(){
+  if (!S.song) return 0;
+  const p = S.song.period;
+  return p * Math.max(1, 2 ** Math.round(Math.log2(CUT[opts.tempo] / p)));
+}
+// The clip in its final order: the story pieces first, then the edit pieces, each in the order of the video
+function plan(){
+  const dur = S.dur, target = opts.target - (titleInput.value.trim() ? TITLE_LEN : 0);   // the title counts too
+  if (isShort()) return carve(dur, S.banned).map(c => ({ ...c, part: 'story', pinned: false }));
+  const storyOn = opts.order !== 'best', editOn = opts.order !== 'story';
+  const pins = S.pinned.map(p => ({ ...p, pinned: true, part: storyOn && editOn ? p.part : storyOn ? 'story' : 'edit' }));
+  const story = pins.filter(p => p.part === 'story'), edit = pins.filter(p => p.part === 'edit');
+  if (storyOn){
+    const budget = (editOn ? target / 2 : target) - lengthOf(story);
+    const L = Math.max(MIN_CLIP, Math.min(STORY[opts.tempo], budget / 2));
+    if (budget >= MIN_CLIP){
+      const found = pickWindows(S.storyScore, dur, budget, { L, spread: true, have: story, avoid: pins, banned: S.banned, gap: GAP });
+      for (const c of found) story.push({ ...toPauses(c), part: 'story', pinned: false });
+    }
+    // pauses can make a scene a bit longer; the story never takes more than its share
+    let over = lengthOf(story) - (editOn ? target / 2 + 1 : target);
+    for (const c of story.filter(c => !c.pinned).sort((a, b) => (b.end - b.start) - (a.end - a.start))){
+      if (over <= 0) break;
+      const cutBy = Math.min(over, c.end - c.start - MIN_CLIP);
+      if (cutBy > 0){ c.end -= cutBy; over -= cutBy; }
+    }
+  }
+  if (editOn){
+    const budget = target - lengthOf(story) - lengthOf(edit), cut = beatCut();
+    const found = budget >= (cut || MIN_CLIP) ? pickWindows(S.score, dur, budget, cut
+      ? { L: cut, fixed: true, avoid: [...story, ...edit], banned: S.banned, gap: GAP + cut / 2 }
+      : { L: Math.max(MIN_CLIP, Math.min(TEMPO[opts.tempo], target / 2)), avoid: [...story, ...edit], banned: S.banned, gap: GAP }) : [];
+    for (const c of found) edit.push({ ...c, part: 'edit', pinned: false });
+  }
+  return [...story.sort(byStart), ...edit.sort(byStart)];
 }
 
 // ---------- The track drawing (also used for the example on the start page) ----------
@@ -526,10 +620,10 @@ function drawTrack(cv, d){
   const area = () => { g.beginPath(); g.moveTo(0, base); for (let x = 0; x <= cols; x++) g.lineTo(x / cols * w, ys[x]); g.lineTo(w, base); g.closePath(); };
   g.fillStyle = col('--track-curve'); area(); g.fill();
   for (const c of d.clips){
-    const x0 = c.start / d.dur * w, x1 = Math.max(x0 + 2, c.end / d.dur * w);
-    g.fillStyle = col('--track-sel'); g.fillRect(x0, 0, x1 - x0, h);
+    const x0 = c.start / d.dur * w, x1 = Math.max(x0 + 2, c.end / d.dur * w), edit = c.part === 'edit';
+    g.fillStyle = col(edit ? '--track-sel-edit' : '--track-sel'); g.fillRect(x0, 0, x1 - x0, h);
     g.save(); g.beginPath(); g.rect(x0, 0, x1 - x0, h); g.clip();
-    g.fillStyle = col('--yellow'); area(); g.fill();
+    g.fillStyle = col(edit ? '--edit' : '--yellow'); area(); g.fill();
     g.restore();
   }
   if (d.at != null){
@@ -538,7 +632,7 @@ function drawTrack(cv, d){
     g.beginPath(); g.arc(x, 4, 4, 0, Math.PI * 2); g.fill();
   }
 }
-// The example: a made-up 13 minute video with a few loud moments, picked like a real one
+// The example: a made-up 13 minute video, picked like a real one with "Beides"
 const demo = (() => {
   const dur = 780, n = dur / HOP, s = new Float32Array(n);
   let seed = 11, drift = 0;
@@ -546,33 +640,43 @@ const demo = (() => {
   for (let i = 0; i < n; i++){ drift = drift * 0.995 + (rnd() - 0.5) * 0.08; s[i] = drift + (rnd() - 0.5) * 0.5; }
   for (const [t, w, a] of [[48, 5, 1.6], [131, 7, 2.4], [205, 4, 1.4], [262, 9, 2.1], [339, 6, 2.8], [418, 3, 1.5], [472, 8, 1.9], [540, 5, 2.6], [611, 7, 2.2], [688, 4, 1.7], [742, 6, 2.5]])
     for (let i = 0; i < n; i++) s[i] += a * Math.exp(-(((i * HOP - t) / w) ** 2));
-  const view = smooth(s, 8), clips = pick(s, dur, { target: 60, tempo: 'mix', order: 'both', pinned: [], banned: [] });
-  return { dur, view, clips, lo: percentile(view, 0.05), hi: percentile(view, 1) };
+  const story = pickWindows(s, dur, 30, { L: 8, spread: true, avoid: [], banned: [], gap: GAP }).map(c => ({ ...c, part: 'story' }));
+  const edit = pickWindows(s, dur, 30, { L: 2, fixed: true, avoid: story, banned: [], gap: 1 }).map(c => ({ ...c, part: 'edit' }));
+  const view = smooth(s, 8);
+  return { dur, view, clips: [...story, ...edit], story, edit, lo: percentile(view, 0.05), hi: percentile(view, 1) };
 })();
-$('demoText').textContent = `Beispiel: aus 13 Minuten werden ${demo.clips.length} Stellen mit zusammen ${fmtLen(lengthOf(demo.clips))}`;
+$('demoText').textContent = `Beispiel: aus 13 Minuten werden ${demo.story.length} Szenen Geschichte und ${demo.edit.length} schnelle Schnitte Edit, zusammen ${fmtLen(lengthOf(demo.clips))}`;
 const redrawAll = () => { drawTrack($('demoTrack'), demo); if (S.view) drawEditTrack(); };
 new ResizeObserver(redrawAll).observe($('demoTrack'));
 new ResizeObserver(() => { if (S.view) drawEditTrack(); }).observe($('track'));
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redrawAll);
 new MutationObserver(redrawAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
-// ---------- Listening: loudness and brightness of the sound per quarter second ----------
+// ---------- Listening: loudness, brightness and talking per quarter second, pauses per 50 ms ----------
+// Second-order filter coefficients (RBJ cookbook) for the speech band
+function biquad(type, f, sr){
+  const w = 2 * Math.PI * f / sr, cos = Math.cos(w), alpha = Math.sin(w) / (2 * Math.SQRT1_2), a0 = 1 + alpha;
+  const b1 = type === 'lp' ? 1 - cos : -(1 + cos), b0 = (type === 'lp' ? 1 - cos : 1 + cos) / 2;
+  return { b0: b0 / a0, b1: b1 / a0, b2: b0 / a0, a1: -2 * cos / a0, a2: (1 - alpha) / a0 };
+}
 async function listen(track, n, dur, j, progress){
   const energy = new Float64Array(n), high = new Float64Array(n), count = new Float64Array(n);
+  const nf = Math.ceil(dur / FRAME) + 1, fAll = new Float64Array(nf), fBand = new Float64Array(nf), fCount = new Float64Array(nf);
   const sink = new MB.AudioSampleSink(track);
   const last = [];
-  let buf = new Float32Array(8192), tick = 0;
+  let buf = new Float32Array(8192), tick = 0, rate = 0, hp = null, lp = null;
+  let hx1 = 0, hx2 = 0, hy1 = 0, hy2 = 0, lx1 = 0, lx2 = 0, ly1 = 0, ly2 = 0;
   for await (const s of sink.samples()){
     try {
       check(j);
-      const sr = s.sampleRate, nf = s.numberOfFrames, t0 = s.timestamp;
-      if (buf.length < nf) buf = new Float32Array(nf);
+      const sr = s.sampleRate, len = s.numberOfFrames, t0 = s.timestamp;
+      if (buf.length < len) buf = new Float32Array(len);
       for (let c = 0; c < s.numberOfChannels; c++){
         s.copyTo(buf, { planeIndex: c, format: 'f32-planar' });
         let prev = last[c] ?? buf[0], i = 0;
-        while (i < nf){
+        while (i < len){
           const b = Math.floor((t0 + i / sr) / HOP);
-          const end = Math.min(nf, Math.max(i + 1, Math.ceil(((b + 1) * HOP - t0) * sr)));
+          const end = Math.min(len, Math.max(i + 1, Math.ceil(((b + 1) * HOP - t0) * sr)));
           if (b >= 0 && b < n){
             let e = 0, hf = 0;
             for (let k = i; k < end; k++){ const x = buf[k], dx = x - prev; e += x * x; hf += dx * dx; prev = x; }
@@ -581,6 +685,19 @@ async function listen(track, n, dur, j, progress){
           i = end;
         }
         last[c] = prev;
+        if (c) continue;
+        // the first channel also goes through a 250-3500 Hz band filter, where voices are
+        if (sr !== rate){ rate = sr; hp = biquad('hp', 250, sr); lp = biquad('lp', 3500, sr); }
+        let f = Math.floor(t0 / FRAME), next = Math.ceil(((f + 1) * FRAME - t0) * sr);
+        for (let k = 0; k < len; k++){
+          if (k >= next){ f++; next = Math.ceil(((f + 1) * FRAME - t0) * sr); }
+          const x = buf[k];
+          const y = hp.b0 * x + hp.b1 * hx1 + hp.b2 * hx2 - hp.a1 * hy1 - hp.a2 * hy2;
+          hx2 = hx1; hx1 = x; hy2 = hy1; hy1 = y;
+          const z = lp.b0 * y + lp.b1 * lx1 + lp.b2 * lx2 - lp.a1 * ly1 - lp.a2 * ly2;
+          lx2 = lx1; lx1 = y; ly2 = ly1; ly1 = z;
+          if (f >= 0 && f < nf){ fAll[f] += x * x; fBand[f] += z * z; fCount[f]++; }
+        }
       }
       if ((++tick & 63) === 0) progress(t0 / dur);
     } finally { s.close(); }
@@ -594,7 +711,25 @@ async function listen(track, n, dur, j, progress){
   }
   if (have < 8) return null;
   for (let b = 0; b < n; b++) if (!count[b]){ loud[b] = quietest; bright[b] = 0; }
-  return { loud, bright };
+  // Talking: most of the sound in the voice band, and its loudness jumps with the syllables and pauses
+  const frames = new Float32Array(nf), band = new Float32Array(nf), share = new Float32Array(nf);
+  for (let f = 0; f < nf; f++){
+    const c = fCount[f] || 1;
+    frames[f] = 10 * Math.log10(fAll[f] / c + 1e-10);
+    band[f] = 10 * Math.log10(fBand[f] / c + 1e-10);
+    share[f] = fBand[f] / (fAll[f] + 1e-12);
+  }
+  const speech = new Float32Array(n), per = HOP / FRAME;
+  for (let b = 0; b < n; b++){
+    const lo = Math.max(0, Math.round(b * per - 8)), hi = Math.min(nf, Math.round(b * per + 12));
+    let m = 0, m2 = 0, sh = 0, k = hi - lo;
+    for (let f = lo; f < hi; f++){ m += band[f]; m2 += band[f] * band[f]; sh += share[f]; }
+    if (!k) continue;
+    m /= k; sh /= k;
+    const swing = Math.sqrt(Math.max(0, m2 / k - m * m));   // speech swings ~6-12 dB, music and noise much less
+    speech[b] = Math.min(swing, 14) * clamp(sh * 1.6, 0, 1);
+  }
+  return { loud, bright, speech, frames };
 }
 
 // Movement without decoding: frames that change a lot take more bytes in the file
@@ -627,6 +762,91 @@ async function measureMotion(track, n, dur, j, progress){
   return m;
 }
 
+// ---------- The song: tempo, beats and its strongest part ----------
+function findBeat(buffer){
+  const sr = buffer.sampleRate, hop = 512, fps = sr / hop;
+  const a = buffer.getChannelData(0), b = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : a;
+  const n = Math.floor(buffer.length / hop), level = new Float32Array(n), power = new Float32Array(n), onset = new Float32Array(n);
+  for (let f = 0; f < n; f++){
+    let e = 0;
+    for (let k = f * hop, end = k + hop; k < end; k++){ const x = a[k] + b[k]; e += x * x; }
+    power[f] = e / hop; level[f] = Math.log(1e-9 + e);
+  }
+  for (let f = 3; f < n; f++){ const d = level[f] - (level[f - 1] + level[f - 2] + level[f - 3]) / 3; onset[f] = d > 0 ? d : 0; }
+  let mean = 0;
+  for (let f = 0; f < n; f++) mean += onset[f];
+  mean /= n || 1;
+  const ac = lag => { let v = 0; for (let f = lag; f < n; f++) v += (onset[f] - mean) * (onset[f - lag] - mean); return v; };
+  // the tempo is the repeat distance of the hits, between 70 and 180 BPM, gently preferring about 120
+  let lag = 0, top = -Infinity;
+  for (let l = Math.floor(fps * 60 / 180); l <= Math.ceil(fps * 60 / 70); l++){
+    const bpm = 60 * fps / l, v = ac(l) * Math.exp(-0.5 * (Math.log2(bpm / 120) / 0.9) ** 2);
+    if (v > top){ top = v; lag = l; }
+  }
+  const y0 = ac(lag - 1), y1 = ac(lag), y2 = ac(lag + 1), den = y0 - 2 * y1 + y2;
+  const period = (lag + (den < 0 ? clamp(0.5 * (y0 - y2) / den, -0.5, 0.5) : 0)) / fps;
+  // where the beats sit: the shift whose beats land on the most hits
+  let phase = 0, hits = -Infinity;
+  for (let p = 0; p < period * fps; p++){
+    let v = 0;
+    for (let t = p; t < n; t += period * fps) v += onset[Math.round(t)] || 0;
+    if (v > hits){ hits = v; phase = p; }
+  }
+  const P = new Float64Array(n + 1);
+  for (let f = 0; f < n; f++) P[f + 1] = P[f] + power[f];
+  return { bpm: 60 / period, period, first: phase / fps, fps, power: P, length: buffer.duration };
+}
+// The song time that lines up with the start of the edit: the start of its strongest part on a bar (4 beats)
+function songStart(editLen){
+  const s = S.song, f = s.fps, n = s.power.length - 1;
+  let best = s.first, top = -Infinity;
+  for (let t = s.first; t + editLen <= s.length + 1e-6 || t === s.first; t += s.period * 4){
+    const a = Math.floor(t * f), b = Math.min(n, Math.floor((t + editLen) * f));
+    const v = b > a ? (s.power[b] - s.power[a]) / (b - a) : 0;
+    if (v > top){ top = v; best = t; }
+    if (t + editLen > s.length) break;
+  }
+  return best;
+}
+const songEl = new Audio();
+async function loadSong(file){
+  if (job) return;
+  busy.open('Song wird angehört', 'Beat wird gesucht …', false);
+  try {
+    const data = await file.arrayBuffer();
+    const buffer = await new OfflineAudioContext(2, 48000, 48000).decodeAudioData(data);
+    if (buffer.duration < 5) throw new Error('too short');
+    const beat = findBeat(buffer);
+    if (S.songUrl) URL.revokeObjectURL(S.songUrl);
+    S.song = { name: file.name, buffer, ...beat };
+    S.songUrl = URL.createObjectURL(file);
+    songEl.src = S.songUrl;
+    showSong();
+    if (S.view) refresh();
+    toast(`Beat gefunden: ${Math.round(beat.bpm)} Schläge pro Minute.`);
+  } catch (e){
+    console.warn(e);
+    toast('Diesen Song kann dein Browser nicht öffnen. Nimm eine MP3- oder M4A-Datei.');
+  } finally { busy.close(); }
+}
+function showSong(){
+  $('musicName').textContent = S.song ? `${S.song.name} · ${Math.round(S.song.bpm)} BPM` : '';
+  $('musicDel').hidden = !S.song;
+  $('musicBtn').textContent = S.song ? 'Anderer Song' : 'Song auswählen';
+}
+$('musicBtn').addEventListener('click', () => $('musicFile').click());
+$('musicFile').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) loadSong(f); });
+$('musicDel').addEventListener('click', () => {
+  stopPreview(); songEl.pause(); songEl.removeAttribute('src');
+  if (S.songUrl) URL.revokeObjectURL(S.songUrl);
+  S.song = null; S.songUrl = null;
+  showSong(); refresh();
+});
+const titleInput = $('titleText');
+titleInput.value = store.get('title') || '';
+titleInput.addEventListener('input', () => store.set('title', titleInput.value));
+titleInput.addEventListener('change', refresh);
+
 // ---------- Opening a video ----------
 function closeVideo(){
   S.token++;
@@ -636,7 +856,7 @@ function closeVideo(){
   stopPreview();
   const v = $('video'); v.pause(); v.removeAttribute('src'); v.load();
   const r = $('result'); r.removeAttribute('src'); r.load();
-  Object.assign(S, { input: null, vTrack: null, aTrack: null, url: null, result: null, resultUrl: null, view: null, clips: [], pinned: [], banned: [], thumbSink: null });
+  Object.assign(S, { input: null, vTrack: null, aTrack: null, url: null, result: null, resultUrl: null, view: null, frames: null, clips: [], pinned: [], banned: [], thumbSink: null });
   thumbs.clear();
 }
 async function openFile(file){
@@ -672,7 +892,7 @@ async function openFile(file){
     check(j);
     if (token !== S.token) return;
     Object.assign(S, {
-      file, input, vTrack, aTrack, dur, n, audio, motion, hearable,
+      file, input, vTrack, aTrack, dur, n, audio, motion, hearable, frames: audio ? audio.frames : null,
       w: await vTrack.getDisplayWidth(), h: await vTrack.getDisplayHeight(),
       url: URL.createObjectURL(file), pinned: [], banned: [],
       thumbSink: new MB.CanvasSink(vTrack, { width: 144, height: 144, fit: 'cover', poolSize: 1 }),
@@ -739,13 +959,16 @@ function setOpt(key, value){
   for (const b of document.querySelectorAll(`.chips[data-opt="${key}"] .chip`))
     b.setAttribute('aria-checked', String(CHOICES[key][+b.dataset.i][0] === value));
   if (key === 'focus') computeScore();
-  if (key !== 'format') refresh();
+  if (key !== 'format' && key !== 'look') refresh();
 }
 const isShort = () => S.dur <= opts.target + 0.5;
-const clipLen = () => Math.min(S.dur, Math.max(MIN_CLIP, Math.min(TEMPO[opts.tempo], opts.target / 2)));
 function refresh(){
-  S.clips = pick(S.score, S.dur, { target: opts.target, tempo: opts.tempo, order: opts.order, pinned: S.pinned, banned: S.banned });
+  if (!S.view) return;
+  S.clips = plan();
+  const editOn = opts.order !== 'story', storyOn = opts.order !== 'best';
   $('orderHint').textContent = ORDER_HINT[opts.order];
+  $('musicOpt').hidden = !editOn; $('lookOpt').hidden = !editOn;
+  $('legendStory').hidden = !storyOn; $('legendEdit').hidden = !editOn;
   const total = lengthOf(S.clips), short = isShort();
   $('listSum').textContent = `${S.clips.length} ${S.clips.length === 1 ? 'Stelle' : 'Stellen'} · ${fmtLen(total)}`;
   $('totalLabel').textContent = fmtLen(total);
@@ -763,21 +986,38 @@ function refresh(){
   drawEditTrack();
   loadThumbs();
 }
+const ICON = {
+  text: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7V5h14v2M12 5v14M9 19h6"/></svg>',
+  minus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 12h12"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="m7 7 10 10M17 7 7 17"/></svg>',
+};
 function renderClips(){
-  const short = isShort();
-  $('clips').replaceChildren(...S.clips.map((c, i) => {
+  const short = isShort(), items = [];
+  let part = null;
+  S.clips.forEach((c, i) => {
+    if (c.part !== part && opts.order === 'both' && !short){
+      part = c.part;
+      const head = document.createElement('li');
+      head.className = 'parthead';
+      head.innerHTML = part === 'story' ? '<span class="swatch"></span> Geschichte · mit Originalton'
+        : `<span class="swatch edit"></span> Edit · ${S.song ? 'mit Song, auf den Beat' : 'mit Originalton'}`;
+      items.push(head);
+    }
     const li = document.createElement('li');
     li.className = 'clip'; li.dataset.i = i;
     const k = thumbKey(c);
     li.innerHTML = `<button type="button" class="clip-play" data-act="play" aria-label="Stelle ${i + 1} abspielen">
-        <span class="thumb"><img alt="" data-k="${k}"${thumbs.get(k) ? ` src="${thumbs.get(k)}"` : ''}><i>${i + 1}</i><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>
-        <span class="clip-text"><b>${fmt(c.start)} – ${fmt(c.end)}</b><small>${Math.round(c.end - c.start)} s${c.pinned ? ' · von dir' : ''}</small></span>
+        <span class="thumb"><img alt="" data-k="${k}"${thumbs.get(k) ? ` src="${thumbs.get(k)}"` : ''}><i class="${c.part}">${i + 1}</i><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>
+        <span class="clip-text"><b>${fmt(c.start)} – ${fmt(c.end)}</b><small>${Math.round((c.end - c.start) * 10) / 10} s${c.pinned ? ' · von dir' : ''}${c.text ? ` · „${esc(c.text)}“` : ''}</small></span>
       </button>`
-      + (short ? '' : `<button type="button" class="tool" data-act="shorter" aria-label="Kürzer" title="Kürzer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 12h12"/></svg></button>
-      <button type="button" class="tool" data-act="longer" aria-label="Länger" title="Länger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></button>`)
-      + `<button type="button" class="tool del" data-act="remove" aria-label="Entfernen" title="Entfernen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="m7 7 10 10M17 7 7 17"/></svg></button>`;
-    return li;
-  }));
+      + (short ? '' : `<button type="button" class="tool${c.text ? ' on' : ''}" data-act="text" aria-label="Text im Bild" title="Text im Bild">${ICON.text}</button>
+      <button type="button" class="tool" data-act="shorter" aria-label="Kürzer" title="Kürzer">${ICON.minus}</button>
+      <button type="button" class="tool" data-act="longer" aria-label="Länger" title="Länger">${ICON.plus}</button>`)
+      + `<button type="button" class="tool del" data-act="remove" aria-label="Entfernen" title="Entfernen">${ICON.x}</button>`;
+    items.push(li);
+  });
+  $('clips').replaceChildren(...items);
   markPlaying();
 }
 $('clips').addEventListener('click', e => {
@@ -786,17 +1026,38 @@ $('clips').addEventListener('click', e => {
   const i = +li.dataset.i, c = S.clips[i];
   if (!c) return;
   const act = btn.dataset.act;
-  if (act === 'play') playClips([c], true);
+  if (act === 'play') playClips([i], true);
   else if (act === 'remove') removeClip(c);
+  else if (act === 'text') editText(li, c);
   else resizeClip(c, act === 'longer' ? 1 : -1);
 });
+// Text in the picture, like the words in TikTok edits; a piece with text stays in the clip
+function editText(li, c){
+  if (li.querySelector('.captext')) return li.querySelector('.captext input').focus();
+  const row = document.createElement('div');
+  row.className = 'captext';
+  row.innerHTML = `<input type="text" maxlength="40" placeholder="Text im Bild, z.B. WHO DID?" aria-label="Text im Bild" value="${esc(c.text || '')}"><button type="button" class="btn">Fertig</button>`;
+  li.append(row);
+  const input = row.querySelector('input');
+  const done = () => {
+    const text = input.value.trim();
+    if (text !== (c.text || '')){
+      setPinned([...S.pinned.filter(p => !samePlace(p, c)), { start: c.start, end: c.end, part: c.part, text }]);
+      refresh();
+    } else row.remove();
+  };
+  row.querySelector('button').addEventListener('click', done);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); done(); } });
+  input.focus();
+}
 const samePlace = (a, b) => a.start === b.start && a.end === b.end;
 function setPinned(list){
-  list = list.map(c => ({ start: clamp(c.start, 0, S.dur), end: clamp(c.end, 0, S.dur) })).filter(c => c.end - c.start >= 0.5).sort((a, b) => a.start - b.start);
+  list = list.map(c => ({ ...c, start: clamp(c.start, 0, S.dur), end: clamp(c.end, 0, S.dur) })).filter(c => c.end - c.start >= 0.5).sort(byStart);
   const out = [];
   for (const c of list){
     const last = out[out.length - 1];
-    if (last && c.start <= last.end + 0.05) last.end = Math.max(last.end, c.end); else out.push({ ...c });
+    if (last && c.start <= last.end + 0.05){ last.end = Math.max(last.end, c.end); last.text = last.text || c.text; }
+    else out.push({ start: c.start, end: c.end, part: c.part || 'story', text: c.text || '' });
   }
   S.pinned = out;
 }
@@ -807,22 +1068,28 @@ function removeClip(c){
   toast(isShort() ? 'Stelle entfernt.' : 'Stelle entfernt. Dafür kommt eine andere dazu.');
 }
 function resizeClip(c, d){
-  let s = c.start - d, e = c.end + d;
-  if (e - s < MIN_CLIP){ const m = (c.start + c.end) / 2; s = m - MIN_CLIP / 2; e = m + MIN_CLIP / 2; }
+  let s = c.start, e = c.end;
+  const cut = c.part === 'edit' ? beatCut() : 0;
+  if (cut){ e = Math.max(s + cut, e + d * cut); }   // on the beat, a piece grows or shrinks by one cut
+  else {
+    s -= d; e += d;
+    if (e - s < MIN_CLIP){ const m = (c.start + c.end) / 2; s = m - MIN_CLIP / 2; e = m + MIN_CLIP / 2; }
+  }
   const others = S.pinned.filter(p => !samePlace(p, c));
   for (const p of others){
     if (p.end <= c.start + 1e-6 && s < p.end) s = p.end;
     if (p.start >= c.end - 1e-6 && e > p.start) e = p.start;
   }
   s = Math.max(0, s); e = Math.min(S.dur, e);
-  setPinned([...others, { start: s, end: e }]);
+  setPinned([...others, { start: s, end: e, part: c.part, text: c.text }]);
   S.banned = S.banned.filter(b => b.end <= s || b.start >= e);
   refresh();
 }
 $('addBtn').addEventListener('click', () => {
-  const t = $('video').currentTime || 0, L = clipLen();
+  const part = opts.order === 'best' ? 'edit' : 'story';
+  const t = $('video').currentTime || 0, L = Math.min(S.dur, part === 'edit' ? beatCut() || TEMPO[opts.tempo] : STORY[opts.tempo]);
   const s = clamp(t - L / 2, 0, Math.max(0, S.dur - L));
-  setPinned([...S.pinned, { start: s, end: s + L }]);
+  setPinned([...S.pinned, { start: s, end: s + L, part }]);
   S.banned = S.banned.filter(b => b.end <= s || b.start >= s + L);
   refresh();
   toast('Stelle dazugenommen.');
@@ -862,19 +1129,40 @@ function drawEditTrack(){
   track.setAttribute('aria-valuetext', fmt(video.currentTime || 0));
 }
 function markPlaying(){
-  const t = video.currentTime, playing = !video.paused;
-  for (const li of $('clips').children){
-    const c = S.clips[+li.dataset.i];
-    li.classList.toggle('now', !!c && playing && t >= c.start && t < c.end);
+  const now = preview ? preview.list[preview.i] : -1, t = video.currentTime, playing = !video.paused;
+  for (const li of $('clips').querySelectorAll('.clip')){
+    const i = +li.dataset.i, c = S.clips[i];
+    li.classList.toggle('now', preview ? i === now : !!c && playing && t >= c.start && t < c.end);
+  }
+}
+// Where each piece starts in the finished clip, and where the song is at that moment
+const outStart = i => lengthOf(S.clips.slice(0, i));
+function songTimeAt(out){
+  const editStart = lengthOf(S.clips.filter(c => c.part === 'story')), editLen = lengthOf(S.clips.filter(c => c.part === 'edit'));
+  return songStart(editLen) + out - editStart;
+}
+// Makes the player look and sound like the finished clip for the piece that starts now
+function stagePiece(i){
+  const c = S.clips[i], edit = c.part === 'edit', song = !!S.song && opts.order !== 'story';
+  video.style.filter = edit && LOOK[opts.look] !== 'none' ? LOOK[opts.look] : '';
+  $('capView').textContent = c.text || ''; $('capView').hidden = !c.text;
+  video.muted = edit && song;
+  if (song){
+    const t = songTimeAt(outStart(i));
+    if (t >= 0 && t < S.song.length){
+      songEl.volume = edit ? 1 : opts.order === 'both' ? 0.22 : 0;
+      if (Math.abs(songEl.currentTime - t) > 0.15) songEl.currentTime = t;
+      songEl.play().catch(() => {});
+    } else songEl.pause();
   }
 }
 function loop(){
   if (preview){
-    const c = preview.list[preview.i];
-    if (video.currentTime >= c.end - 0.04 || video.ended){
+    const c = S.clips[preview.list[preview.i]];
+    if (!c || video.currentTime >= c.end - 0.04 || video.ended){
       preview.i++;
       if (preview.i >= preview.list.length){ stopPreview(); ownPause = true; video.pause(); ownPause = false; }
-      else video.currentTime = preview.list[preview.i].start;
+      else { video.currentTime = S.clips[preview.list[preview.i]].start; stagePiece(preview.list[preview.i]); }
     }
   }
   drawEditTrack(); markPlaying();
@@ -884,13 +1172,20 @@ const startLoop = () => { if (!raf) raf = requestAnimationFrame(loop); };
 function playClips(list, scroll){
   if (!list.length) return;
   stopPreview();
-  preview = { list: list.map(c => ({ ...c })), i: 0 };
-  video.currentTime = list[0].start;
+  preview = { list, i: 0 };
+  video.currentTime = S.clips[list[0]].start;
+  stagePiece(list[0]);
   video.play().catch(() => stopPreview());
   if (scroll) $('edit').querySelector('.player').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   syncPreviewBtn(); startLoop();
 }
-function stopPreview(){ preview = null; syncPreviewBtn(); }
+function stopPreview(){
+  preview = null;
+  songEl.pause();
+  video.muted = false; video.style.filter = '';
+  $('capView').hidden = true;
+  syncPreviewBtn();
+}
 function syncPreviewBtn(){
   const on = !!preview && preview.list.length > 1;
   $('previewBtn').querySelector('span').textContent = on ? 'Stopp' : 'Vorschau';
@@ -898,7 +1193,7 @@ function syncPreviewBtn(){
 }
 $('previewBtn').addEventListener('click', () => {
   if (preview && preview.list.length > 1){ stopPreview(); ownPause = true; video.pause(); ownPause = false; }
-  else playClips(S.clips, false);
+  else playClips(S.clips.map((c, i) => i), false);
 });
 video.addEventListener('play', startLoop);
 video.addEventListener('pause', () => { if (!ownPause) stopPreview(); drawEditTrack(); markPlaying(); });
@@ -922,7 +1217,7 @@ track.addEventListener('keydown', e => {
   drawEditTrack();
 });
 
-// ---------- Cutting: decode only the chosen parts, draw them, and encode one new MP4 ----------
+// ---------- Cutting: decode only the chosen parts, draw them, mix the sound and encode one new MP4 ----------
 function outputSize(){
   let w = S.w, h = S.h;
   if (opts.format === 'tall'){ if (w / h > 9 / 16) w = h * 9 / 16; else h = w * 16 / 9; }
@@ -939,30 +1234,24 @@ function loadAacEncoder(){
     document.head.append(s);
   }).then(() => { window.MediabunnyAacEncoder.registerAacEncoder(); aacAdded = true; return true; }, () => false);
 }
-// The sound is decoded, trimmed and encoded again as AAC where possible (it plays everywhere);
-// otherwise AAC sound is copied as it is, and other sound becomes Opus or is copied
+// The sound is mixed (original sound, song, fades) and encoded as AAC where possible, because it plays
+// everywhere; without a song, AAC sound can also be copied as it is, and otherwise it becomes Opus
 async function planAudio(){
-  const t = S.aTrack;
-  if (!t) return null;
-  const channels = Math.min(2, await t.getNumberOfChannels()), rate = await t.getSampleRate();
-  const codec = await t.getCodec(), copyable = !!(await t.getDecoderConfig());
-  if (S.hearable && !aacBroken){
-    const q = new MB.Quality({ bitrate: 160000 });
-    for (const sampleRate of rate === 48000 || rate === 44100 ? [rate] : [rate, 48000]){
-      const config = { numberOfChannels: channels, sampleRate, quality: q };
-      if (await MB.canEncodeAudio('aac', config) || ((await loadAacEncoder()) && await MB.canEncodeAudio('aac', config)))
-        return { mode: 'encode', codec: 'aac', quality: q, transform: { numberOfChannels: channels, sampleRate }, added: aacAdded };
-    }
+  const t = S.aTrack, mixable = S.hearable || !!S.song;
+  const codec = t ? await t.getCodec() : null, copyable = !!(t && await t.getDecoderConfig());
+  if (mixable && !aacBroken){
+    const q = new MB.Quality({ bitrate: 160000 }), config = { numberOfChannels: 2, sampleRate: 48000, quality: q };
+    if (await MB.canEncodeAudio('aac', config) || ((await loadAacEncoder()) && await MB.canEncodeAudio('aac', config)))
+      return { mode: 'mix', codec: 'aac', quality: q, added: aacAdded };
   }
-  if (codec === 'aac' && copyable) return { mode: 'copy', codec };
+  if (!S.song && codec === 'aac' && copyable) return { mode: 'copy', codec };
   const qo = new MB.Quality({ bitrate: 128000 });
-  if (S.hearable && await MB.canEncodeAudio('opus', { numberOfChannels: channels, sampleRate: 48000, quality: qo }))
-    return { mode: 'encode', codec: 'opus', quality: qo, transform: { numberOfChannels: channels, sampleRate: 48000 } };
-  if (['mp3', 'opus', 'flac', 'ac3', 'eac3'].includes(codec) && copyable) return { mode: 'copy', codec };
+  if (mixable && await MB.canEncodeAudio('opus', { numberOfChannels: 2, sampleRate: 48000, quality: qo })) return { mode: 'mix', codec: 'opus', quality: qo };
+  if (!S.song && ['mp3', 'opus', 'flac', 'ac3', 'eac3'].includes(codec) && copyable) return { mode: 'copy', codec };
   return null;
 }
-// Moves every cut onto the start of a frame (inside the chosen part), so no frame gets cut in half,
-// sound and picture stay together and the clip never gets longer than chosen
+// Moves every cut onto the start of a frame (inside the chosen part), so no frame gets cut in half;
+// pieces on the beat keep their exact length, so the cuts stay on the beat
 async function snapToFrames(segs){
   const frames = new MB.EncodedPacketSink(S.vTrack);
   const frameAt = async (t, next) => {
@@ -971,29 +1260,104 @@ async function snapToFrames(segs){
     return next && p.timestamp < t - 1e-6 && p.duration > 0 ? p.timestamp + p.duration : p.timestamp;
   };
   return Promise.all(segs.map(async s => {
+    if (s.beat) return s;
     const start = await frameAt(s.start, true), end = s.end >= S.dur - 1e-3 ? s.end : await frameAt(s.end, false);
-    return end > start ? { start, end } : s;
+    return end > start ? { ...s, start, end } : s;
   }));
 }
-async function cut(segs, j, progress){
+// The original sound of one piece as an AudioBuffer
+async function soundOf(seg, j){
+  const sink = new MB.AudioSampleSink(S.aTrack), parts = [];
+  let rate = 0, channels = 0;
+  for await (const s of sink.samples(seg.start, seg.end)){
+    try {
+      check(j);
+      rate = s.sampleRate; channels = s.numberOfChannels;
+      const from = Math.max(0, Math.round((seg.start - s.timestamp) * rate)), to = Math.min(s.numberOfFrames, Math.round((seg.end - s.timestamp) * rate));
+      if (to <= from) continue;
+      const data = [];
+      for (let c = 0; c < channels; c++){
+        const a = new Float32Array(to - from);
+        s.copyTo(a, { planeIndex: c, format: 'f32-planar', frameOffset: from, frameCount: to - from });
+        data.push(a);
+      }
+      parts.push({ at: Math.max(0, Math.round((s.timestamp + from / rate - seg.start) * rate)), data });
+    } finally { s.close(); }
+  }
+  if (!parts.length) return null;
+  const length = Math.max(...parts.map(p => p.at + p.data[0].length));
+  const buffer = new AudioBuffer({ length, numberOfChannels: channels, sampleRate: rate });
+  for (const p of parts) for (let c = 0; c < channels; c++) buffer.copyToChannel(p.data[c], c, p.at);
+  return buffer;
+}
+// Mixes the whole sound track: the original sound of the story (and of the edit without a song) with short
+// fades at the cuts, and the song: quiet under the story, loud in the edit, fading out at the end
+async function mixSound(segs, total, j){
+  const rate = 48000, ac = new OfflineAudioContext(2, Math.max(1, Math.ceil(total * rate)), rate);
+  const song = S.song && segs.some(s => s.part === 'edit') ? S.song : null;
+  let at = 0;
+  for (const seg of segs){
+    const len = seg.end - seg.start;
+    if (S.hearable && !(song && seg.part === 'edit')){
+      const buffer = await soundOf(seg, j);
+      if (buffer){
+        const src = ac.createBufferSource(), g = ac.createGain();
+        src.buffer = buffer;
+        g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(1, at + FADE);
+        g.gain.setValueAtTime(1, at + len - FADE); g.gain.linearRampToValueAtTime(0, at + len);
+        src.connect(g); g.connect(ac.destination); src.start(at); src.stop(at + len);
+      }
+    }
+    at += len;
+  }
+  if (song){
+    const storyLen = lengthOf(segs.filter(s => s.part === 'story')), editLen = lengthOf(segs.filter(s => s.part === 'edit'));
+    const songAt = songStart(editLen), begin = Math.max(0, storyLen - songAt), offset = Math.max(0, songAt - storyLen);
+    const under = storyLen > 0 && opts.order === 'both' ? 0.22 : 0;
+    const src = ac.createBufferSource(), g = ac.createGain();
+    src.buffer = song.buffer;
+    g.gain.setValueAtTime(0, begin);
+    if (begin < storyLen){ g.gain.linearRampToValueAtTime(under, Math.min(storyLen, begin + 0.5)); g.gain.setValueAtTime(under, Math.max(begin, storyLen - 0.15)); }
+    g.gain.linearRampToValueAtTime(1, storyLen + 0.01);
+    g.gain.setValueAtTime(1, Math.max(storyLen + 0.02, total - 1.5)); g.gain.linearRampToValueAtTime(0, total);
+    src.connect(g); g.connect(ac.destination); src.start(begin, offset);
+  }
+  return ac.startRendering();
+}
+async function addSound(buffer, out, j){
+  const rate = buffer.sampleRate, n = buffer.length, l = buffer.getChannelData(0), r = buffer.getChannelData(1);
+  for (let i = 0; i < n; i += rate){
+    check(j);
+    const len = Math.min(rate, n - i), data = new Float32Array(len * 2);
+    data.set(l.subarray(i, i + len)); data.set(r.subarray(i, i + len), len);
+    const s = new MB.AudioSample({ data, format: 'f32-planar', numberOfChannels: 2, sampleRate: rate, timestamp: i / rate });
+    try { await out.add(s); } finally { s.close(); }
+  }
+}
+async function cut(clips, j, progress){
+  const cutLen = beatCut(), title = titleInput.value.trim();
+  let segs = clips.map(c => ({ start: c.start, end: c.end, part: c.part, text: c.text || '', beat: c.part === 'edit' && !!cutLen && opts.order !== 'story' }));
   segs = await snapToFrames(segs);
-  const total = lengthOf(segs), size = outputSize();
+  const titleLen = title ? TITLE_LEN : 0, total = lengthOf(segs) + titleLen, size = outputSize();
   const vCodec = await MB.getFirstEncodableVideoCodec(['avc', 'hevc', 'vp9', 'av1'], { width: size.w, height: size.h });
   if (!vCodec) throw { code: 'no_encoder' };
   const sound = await planAudio();
   S.addedAac = !!(sound && sound.added);
   check(j);
+  let mixed = null;
+  if (sound && sound.mode === 'mix'){ busy.text('Ton wird gemischt …'); mixed = await mixSound(segs, total, j); }
+  await document.fonts.load(`900 40px Nunito`).catch(() => {});
   const output = new MB.Output({ format: new MB.Mp4OutputFormat({ fastStart: 'in-memory' }), target: new MB.BufferTarget() });
   const canvas = document.createElement('canvas');
   canvas.width = size.w; canvas.height = size.h;
-  const ctx = canvas.getContext('2d', { alpha: false });
+  const ctx = canvas.getContext('2d', { alpha: false, willReadFrequently: !canFilter });
   const videoOut = new MB.CanvasSource(canvas, { codec: vCodec, quality: new MB.Quality({ quality: 'high', preferBitrate: true }) });
   output.addVideoTrack(videoOut);
   let audioOut = null;
-  if (sound && sound.mode === 'encode') audioOut = new MB.AudioSampleSource({ codec: sound.codec, quality: sound.quality, transform: sound.transform });
+  if (sound && sound.mode === 'mix') audioOut = new MB.AudioSampleSource({ codec: sound.codec, quality: sound.quality });
   else if (sound) audioOut = new MB.EncodedAudioPacketSource(sound.codec);
   if (audioOut) output.addAudioTrack(audioOut);
-  // Picture and sound are cut side by side; when one of them fails or is cancelled, the other stops too
+  // Picture and sound are written side by side; when one of them fails or is cancelled, the other stops too
   const run = { stopped: false }, step = { get cancelled(){ return j.cancelled || run.stopped; } };
   const stop = async e => {
     if (!run.stopped){ run.stopped = true; await output.cancel().catch(() => {}); }
@@ -1002,8 +1366,8 @@ async function cut(segs, j, progress){
   try {
     await output.start();
     const results = await Promise.allSettled([
-      cutVideo(segs, ctx, videoOut, step, t => progress(0.96 * t / total), k => busy.text(`Stelle ${k + 1} von ${segs.length} …`)),
-      audioOut && (sound.mode === 'encode' ? cutAudio(segs, audioOut, step) : copyAudio(segs, audioOut, step)),
+      cutVideo(segs, ctx, videoOut, step, t => progress(0.96 * t / total), k => busy.text(k < segs.length ? `Stelle ${k + 1} von ${segs.length} …` : 'Titel …'), title),
+      audioOut && (mixed ? addSound(mixed, audioOut, step) : copyAudio(segs, audioOut, step)),
     ].map(p => Promise.resolve(p).catch(stop)));
     const failed = results.filter(r => r.status === 'rejected').map(r => r.reason);
     if (failed.length) throw j.cancelled ? new Cancelled() : failed.find(e => !(e instanceof Cancelled)) || failed[0];
@@ -1018,59 +1382,81 @@ async function cut(segs, j, progress){
   progress(1);
   return { blob: new Blob([output.target.buffer], { type: 'video/mp4' }), length: total };
 }
-async function cutVideo(segs, ctx, out, j, onTime, onPiece){
+// Canvas filters (black and white, more contrast) work in most browsers; elsewhere the pixels are changed by hand
+const canFilter = (() => { const g = document.createElement('canvas').getContext('2d'); g.filter = 'grayscale(1)'; return g.filter === 'grayscale(1)'; })();
+function lookByHand(ctx, look){
+  const { width: w, height: h } = ctx.canvas, img = ctx.getImageData(0, 0, w, h), d = img.data;
+  const bw = look === 'bw', k = bw ? 1.3 : 1.2, keep = bw ? 0 : 0.65, lift = bw ? 0.92 : 0.9;
+  for (let i = 0; i < d.length; i += 4){
+    const y = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    for (let c = 0; c < 3; c++){ const v = y + (d[i + c] - y) * keep; d[i + c] = ((v - 128) * k + 128) * lift; }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+let vignette = null;
+function paint(ctx, sample, seg){
+  const W = ctx.canvas.width, H = ctx.canvas.height, look = seg.part === 'edit' && opts.order !== 'story' ? opts.look : 'normal';
+  if (look !== 'normal' && canFilter) ctx.filter = LOOK[look];
+  sample.drawWithFit(ctx, { fit: 'cover' });
+  if (look !== 'normal'){
+    if (canFilter) ctx.filter = 'none'; else lookByHand(ctx, look);
+    if (!vignette || vignette.w !== W || vignette.h !== H){
+      const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.hypot(W, H) / 2);
+      g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.5)');
+      vignette = { w: W, h: H, g };
+    }
+    ctx.fillStyle = vignette.g; ctx.fillRect(0, 0, W, H);
+  }
+  if (seg.text) drawWords(ctx, seg.text.toUpperCase(), '#ffffff', 0.08);
+}
+// Big centered words, wrapped into lines that fit
+function drawWords(ctx, text, color, scale){
+  const W = ctx.canvas.width, H = ctx.canvas.height, size = Math.round(Math.min(W, H) * scale);
+  ctx.font = `900 ${size}px Nunito, "Arial Black", Arial, sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const lines = [];
+  for (const word of text.split(/\s+/)){
+    const line = lines.length ? `${lines[lines.length - 1]} ${word}` : word;
+    if (lines.length && ctx.measureText(line).width <= W * 0.86) lines[lines.length - 1] = line; else lines.push(word);
+  }
+  ctx.shadowColor = 'rgba(0,0,0,0.7)'; ctx.shadowBlur = size * 0.3; ctx.fillStyle = color;
+  lines.forEach((line, i) => ctx.fillText(line, W / 2, H / 2 + (i - (lines.length - 1) / 2) * size * 1.12, W * 0.92));
+  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+}
+async function cutVideo(segs, ctx, out, j, onTime, onPiece, title){
   const sink = new MB.VideoSampleSink(S.vTrack);
-  let at = 0;
+  let at = 0, last = -1;
   for (const [k, seg] of segs.entries()){
     onPiece(k);
     for await (const sample of sink.samples(seg.start, seg.end)){
-      let from = 0, to = 0;
+      let tick = 0, frame = 1 / 30;
       try {
         check(j);
-        from = Math.max(sample.timestamp, seg.start);
-        to = Math.min(sample.timestamp + (sample.duration || 1 / 30), seg.end);
-        if (to - from < 0.0005) continue;
-        sample.drawWithFit(ctx, { fit: 'cover' });
+        frame = sample.duration || frame;
+        // every frame sits on the frame grid of the video, so a cut between two frames never leaves a sliver
+        tick = Math.round((at + Math.max(sample.timestamp, seg.start) - seg.start) / frame);
+        if (tick <= last || tick * frame >= at + seg.end - seg.start - frame * 0.5) continue;
+        paint(ctx, sample, seg);
       } finally { sample.close(); }
-      await out.add(at + from - seg.start, to - from);
-      onTime(at + to - seg.start);
+      last = tick;
+      await out.add(tick * frame, frame);
+      onTime((tick + 1) * frame);
     }
     at += seg.end - seg.start;
   }
-}
-async function cutAudio(segs, out, j){
-  const sink = new MB.AudioSampleSink(S.aTrack);
-  let at = 0;
-  for (const seg of segs){
-    for await (const sample of sink.samples(seg.start, seg.end)){
-      let piece = null;
-      try { check(j); piece = trimAndFade(sample, seg, at); }
-      finally { sample.close(); }
-      if (piece) try { await out.add(piece); } finally { piece.close(); }
-    }
-    at += seg.end - seg.start;
+  if (!title) return;
+  // the title at the end: red letters on black, fading in
+  onPiece(segs.length);
+  const W = ctx.canvas.width, H = ctx.canvas.height, fps = 30;
+  for (let f = 0; f < TITLE_LEN * fps; f++){
+    check(j);
+    ctx.globalAlpha = 1; ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = Math.min(1, f / fps / 0.4);
+    drawWords(ctx, title.toUpperCase(), '#e3262f', 0.11);
+    ctx.globalAlpha = 1;
+    await out.add(at + f / fps, 1 / fps);
+    onTime(at + (f + 1) / fps);
   }
-}
-// Keeps only the part of a sound sample inside the clip and fades its edges at the cuts
-function trimAndFade(s, seg, at){
-  const sr = s.sampleRate, ch = s.numberOfChannels;
-  const from = Math.max(0, Math.round((seg.start - s.timestamp) * sr));
-  const to = Math.min(s.numberOfFrames, Math.round((seg.end - s.timestamp) * sr));
-  const len = to - from;
-  if (len <= 0) return null;
-  const data = new Float32Array(len * ch);
-  for (let c = 0; c < ch; c++) s.copyTo(data.subarray(c * len, (c + 1) * len), { planeIndex: c, format: 'f32-planar', frameOffset: from, frameCount: len });
-  const first = s.timestamp + from / sr, fade = Math.max(1, Math.round(FADE * sr));
-  const sinceIn = Math.round((first - seg.start) * sr), untilOut = Math.round((seg.end - first) * sr);
-  for (let k = 0; k < Math.min(len, fade - sinceIn); k++){
-    const g = (sinceIn + k + 0.5) / fade;
-    for (let c = 0; c < ch; c++) data[c * len + k] *= g;
-  }
-  for (let k = Math.max(0, untilOut - fade); k < len; k++){
-    const g = Math.max(0, (untilOut - k - 0.5) / fade);
-    for (let c = 0; c < ch; c++) data[c * len + k] *= g;
-  }
-  return new MB.AudioSample({ data, format: 'f32-planar', numberOfChannels: ch, sampleRate: sr, timestamp: at + first - seg.start });
 }
 async function copyAudio(segs, out, j){
   const sink = new MB.EncodedPacketSink(S.aTrack), decoderConfig = await S.aTrack.getDecoderConfig();
@@ -1090,20 +1476,20 @@ async function copyAudio(segs, out, j){
 $('makeBtn').addEventListener('click', async () => {
   if (job || !S.clips.length) return;
   stopPreview(); ownPause = true; video.pause(); ownPause = false;
-  const segs = S.clips.map(c => ({ start: c.start, end: c.end })), token = S.token;
+  const clips = S.clips.map(c => ({ ...c })), token = S.token;
   const j = job = { cancelled: false };
   busy.open('Clip wird geschnitten', 'Stellen werden zusammengesetzt …');
   keepAwake(true);
   try {
     let made;
-    try { made = await cut(segs, j, p => busy.set(p)); }
+    try { made = await cut(clips, j, p => busy.set(p)); }
     catch (e){
       // The added AAC encoder can fail where WebAssembly isn't allowed; then the sound is made without it
       if (e instanceof Cancelled || !S.addedAac) throw e;
       console.warn(e);
       aacBroken = true;
       $('cancelBtn').disabled = false;
-      made = await cut(segs, j, p => busy.set(p));
+      made = await cut(clips, j, p => busy.set(p));
     }
     if (token === S.token) showResult(made.blob, made.length);
   } catch (e){
@@ -1117,7 +1503,7 @@ $('cancelBtn').addEventListener('click', () => { if (job){ job.cancelled = true;
 // ---------- The finished clip ----------
 function clipName(){
   const base = S.file.name.replace(/\.[^.]+$/, '').replace(/[^\p{L}\p{N} _-]+/gu, '').trim().slice(0, 60) || 'video';
-  return `${base}-highlights.mp4`;
+  return `${base}-${opts.order === 'story' ? 'geschichte' : 'edit'}.mp4`;
 }
 function showResult(blob, length){
   if (S.resultUrl) URL.revokeObjectURL(S.resultUrl);
@@ -1154,6 +1540,7 @@ $('backBtn').addEventListener('click', () => { $('result').pause(); show('edit')
 $('newBtn').addEventListener('click', () => { closeVideo(); show('start'); });
 
 if (!canEdit()) startError('Dein Browser kann hier keine Videos bearbeiten. Nimm die neuste Version von Chrome, Edge oder Safari.');
+showSong();
 redrawAll();
 </script>
 </body>
