@@ -226,6 +226,7 @@ h1,h2{text-wrap:balance}
         <div class="fileline"><b id="fileName"></b><span id="fileMeta"></span></div>
         <div class="opts">
           <div class="opt"><span class="opt-label" id="lblTarget">Länge</span><div class="chips" role="radiogroup" aria-labelledby="lblTarget" data-opt="target"></div></div>
+          <div class="opt"><span class="opt-label" id="lblOrder">Auswahl</span><div class="chips" role="radiogroup" aria-labelledby="lblOrder" data-opt="order"></div></div>
           <div class="opt"><span class="opt-label" id="lblTempo">Schnitt</span><div class="chips" role="radiogroup" aria-labelledby="lblTempo" data-opt="tempo"></div></div>
           <div class="opt" id="focusOpt"><span class="opt-label" id="lblFocus">Achte auf</span><div class="chips" role="radiogroup" aria-labelledby="lblFocus" data-opt="focus"></div></div>
           <div class="opt"><span class="opt-label" id="lblFormat">Format</span><div class="chips" role="radiogroup" aria-labelledby="lblFormat" data-opt="format"></div></div>
@@ -283,6 +284,7 @@ const FADE = 0.012;    // short sound fade at every cut, so it doesn't click
 const TEMPO = { short: 3.5, mix: 6, long: 11 };
 const CHOICES = {
   target: [[15, '15 s'], [30, '30 s'], [45, '45 s'], [60, '1 Min.'], [90, '1½ Min.'], [120, '2 Min.'], [180, '3 Min.']],
+  order: [['story', 'Ganze Geschichte'], ['best', 'Nur die Highlights']],
   tempo: [['short', 'Viele kurze'], ['mix', 'Gemischt'], ['long', 'Wenige lange']],
   focus: [['both', 'Ton + Bewegung'], ['sound', 'Nur Ton'], ['motion', 'Nur Bewegung']],
   format: [['orig', 'Wie das Original'], ['tall', 'Hochformat 9:16']],
@@ -299,7 +301,7 @@ const store = {
   get(k){ try { return localStorage.getItem('clipecke.' + k); } catch { return null; } },
   set(k, v){ try { localStorage.setItem('clipecke.' + k, v); } catch {} },
 };
-const opts = { target: 60, tempo: 'mix', focus: 'both', format: 'orig' };
+const opts = { target: 60, order: 'story', tempo: 'mix', focus: 'both', format: 'orig' };
 try {
   const saved = JSON.parse(store.get('opts') || '{}');
   for (const k of Object.keys(opts)) if (CHOICES[k].some(([v]) => v === saved[k])) opts[k] = saved[k];
@@ -445,24 +447,41 @@ function pick(score, dur, o){
   const clips = o.pinned.map(c => ({ start: c.start, end: c.end, pinned: true }));
   for (const c of clips) block(c.start, c.end, GAP);
   let left = o.target - lengthOf(clips);
-  while (left >= MIN_CLIP){
+  // The best free window between bins lo and hi, at most cap seconds long
+  const best = (lo, hi, cap) => {
     for (let i = 0; i < n; i++) B[i + 1] = B[i] + blocked[i];
-    const lens = new Set([0.7, 1, 1.4].map(f => Math.max(Math.ceil(MIN_CLIP / HOP), Math.floor(Math.min(left, f * L) / HOP + 1e-6))));
-    let best = -Infinity, bi = -1, bk = 0;
+    const lens = new Set([0.7, 1, 1.4].map(f => Math.max(Math.ceil(MIN_CLIP / HOP), Math.floor(Math.min(left, cap, f * L) / HOP + 1e-6))));
+    let top = -Infinity, bi = -1, bk = 0;
     for (const k of lens){
       const bonus = 0.35 * Math.log(k * HOP / L);   // a long, steady stretch may beat a short spike
-      for (let i = 0; i + k <= n; i++){
+      for (let i = lo; i + k <= hi; i++){
         if (B[i + k] !== B[i]) continue;
         const v = (P[i + k] - P[i]) / k + bonus;
-        if (v > best){ best = v; bi = i; bk = k; }
+        if (v > top){ top = v; bi = i; bk = k; }
       }
     }
-    if (bi < 0) break;
-    const c = { start: bi * HOP, end: Math.min(dur, (bi + bk) * HOP), pinned: false };
-    if (c.end - c.start < 1) break;
-    clips.push(c);
-    left -= c.end - c.start;
-    block(c.start, c.end, GAP);
+    return bi < 0 ? null : { start: bi * HOP, end: Math.min(dur, (bi + bk) * HOP), pinned: false };
+  };
+  const take = c => { clips.push(c); left -= c.end - c.start; block(c.start, c.end, GAP); };
+  if (o.story){
+    // The whole story: the video is split into equal parts and each part gives its best moment,
+    // so the clip runs from the beginning to the end; parts with an own clip already count
+    const count = Math.max(1, Math.min(Math.floor(o.target / L), Math.floor(dur / (L + GAP))));
+    const open = [];
+    for (let p = 0; p < count; p++){
+      const a = p * dur / count, b = (p + 1) * dur / count;
+      if (!clips.some(c => (c.start + c.end) / 2 >= a && (c.start + c.end) / 2 < b)) open.push([a, b]);
+    }
+    for (const [k, [a, b]] of open.entries()){
+      if (left < MIN_CLIP) break;
+      const c = best(Math.floor(a / HOP), Math.min(n, Math.ceil(b / HOP)), left / (open.length - k));
+      if (c && c.end - c.start >= 1) take(c);
+    }
+  }
+  while (left >= MIN_CLIP){
+    const c = best(0, n, Infinity);
+    if (!c || c.end - c.start < 1) break;
+    take(c);
   }
   return clips.sort((a, b) => a.start - b.start);
 }
@@ -519,7 +538,7 @@ const demo = (() => {
   for (let i = 0; i < n; i++){ drift = drift * 0.995 + (rnd() - 0.5) * 0.08; s[i] = drift + (rnd() - 0.5) * 0.5; }
   for (const [t, w, a] of [[48, 5, 1.6], [131, 7, 2.4], [205, 4, 1.4], [262, 9, 2.1], [339, 6, 2.8], [418, 3, 1.5], [472, 8, 1.9], [540, 5, 2.6], [611, 7, 2.2], [688, 4, 1.7], [742, 6, 2.5]])
     for (let i = 0; i < n; i++) s[i] += a * Math.exp(-(((i * HOP - t) / w) ** 2));
-  const view = smooth(s, 8), clips = pick(s, dur, { target: 60, tempo: 'mix', pinned: [], banned: [] });
+  const view = smooth(s, 8), clips = pick(s, dur, { target: 60, tempo: 'mix', story: true, pinned: [], banned: [] });
   return { dur, view, clips, lo: percentile(view, 0.05), hi: percentile(view, 1) };
 })();
 $('demoText').textContent = `Beispiel: aus 13 Minuten werden ${demo.clips.length} Stellen mit zusammen ${fmtLen(lengthOf(demo.clips))}`;
@@ -682,6 +701,12 @@ function openEditor(){
   $('durLabel').textContent = fmt(S.dur);
   $('track').setAttribute('aria-valuemax', String(Math.round(S.dur)));
   $('focusOpt').hidden = !S.audio || !S.motion;
+  // A video that isn't longer than the chosen length gets a shorter one, so it still becomes a highlight clip
+  if (S.userTarget != null){ opts.target = S.userTarget; S.userTarget = null; }
+  if (S.dur <= opts.target + 0.5){
+    const fit = CHOICES.target.map(([v]) => v).filter(v => v <= S.dur * 0.6).pop();
+    if (fit){ S.userTarget = opts.target; opts.target = fit; }
+  }
   renderChips();
   refresh();
   show('edit');
@@ -701,7 +726,8 @@ function renderChips(){
 function setOpt(key, value){
   if (opts[key] === value) return;
   opts[key] = value;
-  store.set('opts', JSON.stringify(opts));
+  if (key === 'target') S.userTarget = null;
+  store.set('opts', JSON.stringify({ ...opts, target: S.userTarget ?? opts.target }));
   for (const b of document.querySelectorAll(`.chips[data-opt="${key}"] .chip`))
     b.setAttribute('aria-checked', String(CHOICES[key][+b.dataset.i][0] === value));
   if (key === 'focus') computeScore();
@@ -710,7 +736,7 @@ function setOpt(key, value){
 const isShort = () => S.dur <= opts.target + 0.5;
 const clipLen = () => Math.min(S.dur, Math.max(MIN_CLIP, Math.min(TEMPO[opts.tempo], opts.target / 2)));
 function refresh(){
-  S.clips = pick(S.score, S.dur, { target: opts.target, tempo: opts.tempo, pinned: S.pinned, banned: S.banned });
+  S.clips = pick(S.score, S.dur, { target: opts.target, tempo: opts.tempo, story: opts.order === 'story', pinned: S.pinned, banned: S.banned });
   const total = lengthOf(S.clips), short = isShort();
   $('listSum').textContent = `${S.clips.length} ${S.clips.length === 1 ? 'Stelle' : 'Stellen'} · ${fmtLen(total)}`;
   $('totalLabel').textContent = fmtLen(total);
@@ -719,6 +745,7 @@ function refresh(){
   $('addBtn').hidden = short;
   $('makeBtn').disabled = !S.clips.length;
   const note = short ? 'Dein Video ist nicht länger als die gewählte Länge, darum kommt alles in den Clip. Wähl eine kürzere Länge, dann bleiben nur die besten Stellen.'
+    : S.userTarget != null ? `Dein Video ist nur ${fmt(S.dur)} lang, darum ist die Länge auf ${CHOICES.target.find(([v]) => v === opts.target)[1]} gestellt.`
     : !S.audio && !S.motion ? 'Bei diesem Video kann die Website weder Ton noch Bewegung messen. Wähl die Stellen am besten selbst aus.'
     : !S.audio ? (S.aTrack ? 'Den Ton kann dein Browser nicht auswerten. Die Stellen werden nach Bewegung ausgesucht.' : 'Dieses Video hat keinen Ton. Die Stellen werden nach Bewegung ausgesucht.')
     : '';
