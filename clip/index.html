@@ -892,7 +892,7 @@ function outputSize(){
   const s = Math.min(1, 1920 / Math.max(w, h), 1080 / Math.min(w, h));
   return { w: even(w * s), h: even(h * s) };
 }
-let aacLoad = null;
+let aacLoad = null, aacAdded = false, aacBroken = false;
 function loadAacEncoder(){
   // Some browsers (Chrome on Linux, Firefox) can't write AAC sound themselves; this adds an encoder for it
   return aacLoad ??= new Promise((ok, fail) => {
@@ -900,26 +900,28 @@ function loadAacEncoder(){
     const s = document.createElement('script');
     s.src = AAC_URL; s.onload = ok; s.onerror = fail;
     document.head.append(s);
-  }).then(() => { window.MediabunnyAacEncoder.registerAacEncoder(); return true; }, () => false);
+  }).then(() => { window.MediabunnyAacEncoder.registerAacEncoder(); aacAdded = true; return true; }, () => false);
 }
-// The sound is decoded, trimmed and encoded again where possible; otherwise its packets are copied as they are
+// The sound is decoded, trimmed and encoded again as AAC where possible (it plays everywhere);
+// otherwise AAC sound is copied as it is, and other sound becomes Opus or is copied
 async function planAudio(){
   const t = S.aTrack;
   if (!t) return null;
   const channels = Math.min(2, await t.getNumberOfChannels()), rate = await t.getSampleRate();
-  if (S.hearable){
+  const codec = await t.getCodec(), copyable = !!(await t.getDecoderConfig());
+  if (S.hearable && !aacBroken){
     const q = new MB.Quality({ bitrate: 160000 });
     for (const sampleRate of rate === 48000 || rate === 44100 ? [rate] : [rate, 48000]){
-      const ok = await MB.canEncodeAudio('aac', { numberOfChannels: channels, sampleRate, quality: q })
-        || ((await loadAacEncoder()) && await MB.canEncodeAudio('aac', { numberOfChannels: channels, sampleRate, quality: q }));
-      if (ok) return { mode: 'encode', codec: 'aac', quality: q, transform: { numberOfChannels: channels, sampleRate } };
+      const config = { numberOfChannels: channels, sampleRate, quality: q };
+      if (await MB.canEncodeAudio('aac', config) || ((await loadAacEncoder()) && await MB.canEncodeAudio('aac', config)))
+        return { mode: 'encode', codec: 'aac', quality: q, transform: { numberOfChannels: channels, sampleRate }, added: aacAdded };
     }
-    const qo = new MB.Quality({ bitrate: 128000 });
-    if (await MB.canEncodeAudio('opus', { numberOfChannels: channels, sampleRate: 48000, quality: qo }))
-      return { mode: 'encode', codec: 'opus', quality: qo, transform: { numberOfChannels: channels, sampleRate: 48000 } };
   }
-  const codec = await t.getCodec();
-  if (['aac', 'mp3', 'opus', 'flac', 'ac3', 'eac3'].includes(codec) && await t.getDecoderConfig()) return { mode: 'copy', codec };
+  if (codec === 'aac' && copyable) return { mode: 'copy', codec };
+  const qo = new MB.Quality({ bitrate: 128000 });
+  if (S.hearable && await MB.canEncodeAudio('opus', { numberOfChannels: channels, sampleRate: 48000, quality: qo }))
+    return { mode: 'encode', codec: 'opus', quality: qo, transform: { numberOfChannels: channels, sampleRate: 48000 } };
+  if (['mp3', 'opus', 'flac', 'ac3', 'eac3'].includes(codec) && copyable) return { mode: 'copy', codec };
   return null;
 }
 // Moves every cut onto the start of a frame (inside the chosen part), so no frame gets cut in half,
@@ -942,6 +944,7 @@ async function cut(segs, j, progress){
   const vCodec = await MB.getFirstEncodableVideoCodec(['avc', 'hevc', 'vp9', 'av1'], { width: size.w, height: size.h });
   if (!vCodec) throw { code: 'no_encoder' };
   const sound = await planAudio();
+  S.addedAac = !!(sound && sound.added);
   check(j);
   const output = new MB.Output({ format: new MB.Mp4OutputFormat({ fastStart: 'in-memory' }), target: new MB.BufferTarget() });
   const canvas = document.createElement('canvas');
@@ -953,12 +956,20 @@ async function cut(segs, j, progress){
   if (sound && sound.mode === 'encode') audioOut = new MB.AudioSampleSource({ codec: sound.codec, quality: sound.quality, transform: sound.transform });
   else if (sound) audioOut = new MB.EncodedAudioPacketSource(sound.codec);
   if (audioOut) output.addAudioTrack(audioOut);
+  // Picture and sound are cut side by side; when one of them fails or is cancelled, the other stops too
+  const run = { stopped: false }, step = { get cancelled(){ return j.cancelled || run.stopped; } };
+  const stop = async e => {
+    if (!run.stopped){ run.stopped = true; await output.cancel().catch(() => {}); }
+    throw e;
+  };
   try {
     await output.start();
-    await Promise.all([
-      cutVideo(segs, ctx, videoOut, j, t => progress(0.96 * t / total), k => busy.text(`Stelle ${k + 1} von ${segs.length} …`)),
-      audioOut && (sound.mode === 'encode' ? cutAudio(segs, audioOut, j) : copyAudio(segs, audioOut, j)),
-    ].map(p => Promise.resolve(p).catch(e => { j.cancelled = true; throw e; })));
+    const results = await Promise.allSettled([
+      cutVideo(segs, ctx, videoOut, step, t => progress(0.96 * t / total), k => busy.text(`Stelle ${k + 1} von ${segs.length} …`)),
+      audioOut && (sound.mode === 'encode' ? cutAudio(segs, audioOut, step) : copyAudio(segs, audioOut, step)),
+    ].map(p => Promise.resolve(p).catch(stop)));
+    const failed = results.filter(r => r.status === 'rejected').map(r => r.reason);
+    if (failed.length) throw j.cancelled ? new Cancelled() : failed.find(e => !(e instanceof Cancelled)) || failed[0];
     videoOut.close(); if (audioOut) audioOut.close();
     busy.text('Wird gespeichert …');
     $('cancelBtn').disabled = true;
@@ -998,7 +1009,7 @@ async function cutAudio(segs, out, j){
       let piece = null;
       try { check(j); piece = trimAndFade(sample, seg, at); }
       finally { sample.close(); }
-      if (piece){ await out.add(piece); piece.close(); }
+      if (piece) try { await out.add(piece); } finally { piece.close(); }
     }
     at += seg.end - seg.start;
   }
@@ -1047,8 +1058,17 @@ $('makeBtn').addEventListener('click', async () => {
   busy.open('Clip wird geschnitten', 'Stellen werden zusammengesetzt …');
   keepAwake(true);
   try {
-    const { blob, length } = await cut(segs, j, p => busy.set(p));
-    if (token === S.token) showResult(blob, length);
+    let made;
+    try { made = await cut(segs, j, p => busy.set(p)); }
+    catch (e){
+      // The added AAC encoder can fail where WebAssembly isn't allowed; then the sound is made without it
+      if (e instanceof Cancelled || !S.addedAac) throw e;
+      console.warn(e);
+      aacBroken = true;
+      $('cancelBtn').disabled = false;
+      made = await cut(segs, j, p => busy.set(p));
+    }
+    if (token === S.token) showResult(made.blob, made.length);
   } catch (e){
     if (!(e instanceof Cancelled)){ console.error(e); toast(explain(e)); }
   } finally {
