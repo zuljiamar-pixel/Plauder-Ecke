@@ -143,6 +143,17 @@ So geht's in der App:
 - Beim ersten Anruf fragt das Handy, ob die Website Mikrofon und Kamera benutzen darf: **Erlauben** tippen.
 - Anrufe gehen direkt von Handy zu Handy. In ganz wenigen Handynetzen oder Schul-WLANs klappt die Verbindung nicht (dann bleibt „verbindet …“ stehen). Dann ins WLAN wechseln oder nochmal anrufen.
 
+## Status, Geburtstage, „Zuletzt online“, Gruppenbild und Gruppenname
+
+Im Supabase **SQL Editor** den ganzen Text aus `profil.sql` einfügen und **Run** tippen (braucht vorher `funktionen.sql`). Unten steht dann **Profil und Gruppen sind bereit!**
+
+So geht's in der App:
+- **Dein Profil:** Status eintippen oder einen Vorschlag antippen, Geburtstag (Tag und Monat) wählen. Mit dem Häkchen bestimmst du, ob andere sehen, wann du zuletzt online warst.
+- **Auf einen Namen tippen:** Status, „Online“ oder „Zuletzt online vor …“ und der Geburtstag.
+- **Geburtstag:** Am Tag selbst gibt es Konfetti, in den Chats steht „🎂 … hat heute Geburtstag!“ mit einem Knopf zum Gratulieren.
+- **Gruppenbild und Name:** Oben im Chat auf den Gruppennamen tippen (oder ⋯ › Gruppenbild & Name). Alle in der Gruppe dürfen das ändern.
+- **Im Anruf:** 😀 antippen und ein Emoji wählen. Es fliegt bei allen übers Video.
+
 ## Gut zu wissen
 
 - Supabase gratis: 1 GB für Fotos, Videos und Sprachnachrichten, einzelne Dateien bis 50 MB. Für eine Freundesgruppe reicht das lange.

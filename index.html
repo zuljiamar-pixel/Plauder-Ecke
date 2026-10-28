@@ -428,6 +428,41 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
 .callmsg .ico{font-size:1.25rem}
 .callmsg.missed{color:var(--danger)}
 .callmsg button{border:0;background:#16a34a;color:#fff;border-radius:999px;padding:6px 14px;font-weight:900;cursor:pointer}
+/* Emojis in a call: tap one, it floats up over the video for everyone */
+.call-btn.emoji{font-size:28px;line-height:1}
+@media (max-width: 400px){ .call-bar{gap:10px} .call-bar .call-btn{width:56px;height:56px} }
+.call-emojis{position:absolute;z-index:4;left:50%;transform:translateX(-50%);bottom:calc(max(20px, env(safe-area-inset-bottom, 0px)) + 92px);display:flex;gap:2px;background:rgba(0,0,0,.6);padding:6px 8px;border-radius:999px;max-width:calc(100% - 28px)}
+.call-emojis button{border:0;background:none;font-size:30px;line-height:1;padding:6px;border-radius:50%;cursor:pointer}
+.call-emojis button:active{transform:scale(1.25)}
+.call-fx{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden}
+.fly{position:absolute;bottom:120px;display:flex;flex-direction:column;align-items:center;gap:2px;animation:fly 2.8s ease-out forwards}
+.fly b{font-size:46px;line-height:1}
+.fly small{font-weight:800;font-size:.72rem;background:rgba(0,0,0,.5);padding:1px 8px;border-radius:999px;white-space:nowrap}
+@keyframes fly{0%{transform:translate(0,0) scale(.5);opacity:0}12%{transform:translate(0,-40px) scale(1.15);opacity:1}100%{transform:translate(var(--dx, 0px),-62vh) scale(1);opacity:0}}
+
+/* Birthdays: a bar in the chat and confetti */
+.bdaybar{display:flex;align-items:center;gap:8px;padding-block:8px;padding-left:20px;padding-right:max(14px, env(safe-area-inset-right, 0px));background:var(--field);border-bottom:1px solid var(--line);font-weight:800}
+.bdaybar span{flex:1;min-width:0}
+.bdaybar .pill{padding:8px 14px;flex:none}
+.bdaybar .x{flex:none;width:32px;height:32px;border:0;border-radius:50%;background:none;color:var(--ink);font-size:1.2rem;font-weight:800;cursor:pointer}
+.confetti{position:fixed;inset:0;width:100%;height:100%;z-index:40;pointer-events:none}
+.row-cake{margin-left:4px}
+/* Online right now: a green dot on the picture of a private chat */
+.gface.on::after{content:"";position:absolute;right:1px;bottom:1px;width:14px;height:14px;border-radius:50%;background:var(--online);border:3px solid var(--panel)}
+.head-tap{cursor:pointer}
+/* Status, birthday and "last online" in the profile and the person sheet */
+.about{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
+.chips-row{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.chips-row button{border:0;background:var(--field);color:var(--ink);border-radius:999px;padding:7px 12px;font-weight:800;font-size:.85rem;cursor:pointer}
+.bdayrow{display:flex;align-items:center;gap:8px;font-weight:800;width:100%;justify-content:center;flex-wrap:wrap}
+.bdayrow select{border:0;background:var(--field);color:var(--ink);border-radius:999px;padding:9px 14px;font-weight:800;font-size:.95rem}
+.checkrow{display:flex;align-items:center;gap:10px;font-weight:700;font-size:.9rem;text-align:left;cursor:pointer}
+.checkrow input{flex:none;width:22px;height:22px;accent-color:var(--friend)}
+.sheet p.pstatus{color:var(--ink);font-weight:800;font-size:1rem}
+.sheet p.meta{font-size:.85rem}
+.pick-text{flex:1;min-width:0;display:flex;flex-direction:column}
+.pick-text .pick-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick-sub{font-size:.78rem;color:var(--muted);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* First start: connect, name, first group */
 .gate{position:fixed;inset:0;z-index:25;background:var(--yellow);display:grid;place-items:center;overflow-y:auto;padding:max(20px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px))}
@@ -510,8 +545,8 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
   <main class="main">
     <header class="head">
       <button class="back" id="back-btn" type="button" aria-label="Zurück zu den Chats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" stroke-width="2.6"><path d="M15 5l-7 7 7 7"/></svg></button>
-      <div class="ch-icon" id="head-icon"></div>
-      <div class="head-text">
+      <div class="ch-icon head-tap" id="head-icon"></div>
+      <div class="head-text head-tap" id="head-text" role="button" tabindex="0" aria-label="Infos zum Chat">
         <h2 class="title" id="title">Plauderecke</h2>
         <div class="status" id="status"></div>
       </div>
@@ -520,6 +555,11 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
       <button class="invite-btn" id="invite-btn" type="button" aria-label="Einladen" title="Einladen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6.5 7-6.5s7 2.5 7 6.5M19 8v6M16 11h6"/></svg><span>Einladen</span></button>
       <button class="round" id="head-more" type="button" aria-label="Mehr: suchen, Umfrage, Hintergrund, stummschalten" title="Mehr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" stroke-width="3"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg></button>
     </header>
+    <div class="bdaybar" id="bdaybar" hidden>
+      <span id="bday-text"></span>
+      <button class="pill go" id="bday-go" type="button">Gratulieren 🎉</button>
+      <button class="x" id="bday-x" type="button" aria-label="Ausblenden">×</button>
+    </div>
     <div class="log" id="log" aria-live="polite"></div>
     <div class="members" id="members"></div>
     <div class="replybar" id="replybar" hidden>
@@ -583,6 +623,8 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     <button class="x-close" id="msheet-close" type="button" aria-label="Schließen">×</button>
     <button class="pfp" id="msheet-face" type="button" aria-label="Profilbild groß anzeigen"></button>
     <h2 id="msheet-title"></h2>
+    <p class="pstatus" id="msheet-status" hidden></p>
+    <p class="meta" id="msheet-meta" hidden></p>
     <p id="msheet-text"></p>
     <button class="pill go" id="msheet-dm" type="button">💬 Privat schreiben</button>
     <button class="textbtn" id="msheet-kick" type="button" hidden>Aus der Gruppe entfernen</button>
@@ -613,6 +655,26 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
   </div>
 </div>
 
+<div class="sheet-wrap" id="gsheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="gsheet-title">
+    <span class="grab" aria-hidden="true"></span>
+    <button class="x-close" id="gsheet-close" type="button" aria-label="Schließen">×</button>
+    <h2 id="gsheet-title">Gruppenbild &amp; Name</h2>
+    <button class="pfp" id="gpic-btn" type="button" aria-label="Gruppenbild ändern"><span id="gpic-slot"></span><span class="pfp-cam" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg></span></button>
+    <p id="gpic-note"></p>
+    <div class="actions">
+      <button class="pill go" id="gpic-pick" type="button">Foto wählen</button>
+      <button class="pill ghost" id="gpic-del" type="button">Entfernen</button>
+    </div>
+    <input type="file" id="gpic-input" accept="image/*" hidden>
+    <div class="divider"></div>
+    <form class="namerow" id="gname-form">
+      <input id="gname" maxlength="40" aria-label="Name der Gruppe" placeholder="Name der Gruppe" autocomplete="off">
+      <button class="pill ghost" type="submit">Name speichern</button>
+    </form>
+  </div>
+</div>
+
 <div class="sheet-wrap" id="asheet" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="asheet-title">
     <span class="grab" aria-hidden="true"></span>
@@ -639,6 +701,20 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
       <input id="my-name" maxlength="30" aria-label="Dein Name" placeholder="Dein Name" autocomplete="off">
       <button class="pill ghost" type="submit">Name speichern</button>
     </form>
+    <div class="about" id="about" hidden>
+      <div class="divider"></div>
+      <form class="namerow" id="status-form">
+        <input id="my-status" maxlength="60" aria-label="Dein Status" placeholder="Dein Status, z. B. Bin am Gamen" autocomplete="off">
+        <button class="pill ghost" type="submit">Status speichern</button>
+      </form>
+      <div class="chips-row" id="status-chips"></div>
+      <div class="bdayrow">
+        <span>🎂 Geburtstag</span>
+        <select id="bday-day" aria-label="Geburtstag: Tag"></select>
+        <select id="bday-month" aria-label="Geburtstag: Monat"></select>
+      </div>
+      <label class="checkrow"><input type="checkbox" id="show-seen"> Andere sehen, wann ich zuletzt online war</label>
+    </div>
     <div class="divider"></div>
     <div class="pushrow">
       <button class="pill go" id="push-btn" type="button">Benachrichtigungen einschalten</button>
@@ -780,10 +856,13 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
   </div>
   <div class="call-grid" id="call-grid"></div>
   <video class="call-self" id="call-self" playsinline muted autoplay hidden></video>
+  <div class="call-fx" id="call-fx" aria-hidden="true"></div>
+  <div class="call-emojis" id="call-emojis" role="group" aria-label="Emoji schicken" hidden></div>
   <div class="call-bar">
     <button class="call-btn" id="call-mic" type="button" aria-label="Mikrofon aus" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></button>
     <button class="call-btn" id="call-cam" type="button" aria-label="Kamera an" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10.5l6-3.5v10l-6-3.5z"/></svg></button>
     <button class="call-btn" id="call-flip" type="button" aria-label="Kamera wechseln" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9a8 8 0 0 1 14-3l2 2M20 15a8 8 0 0 1-14 3l-2-2"/><path d="M20 4v4h-4M4 20v-4h4"/></svg></button>
+    <button class="call-btn emoji" id="call-react" type="button" aria-label="Emoji schicken" aria-expanded="false">😀</button>
     <button class="call-btn end" id="call-end" type="button" aria-label="Auflegen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:rotate(135deg)"><path d="M5 3.5h3.5l2 5-2.4 1.6a11.5 11.5 0 0 0 5.8 5.8l1.6-2.4 5 2V19a2 2 0 0 1-2.2 2A17 17 0 0 1 3 5.7a2 2 0 0 1 2-2.2z"/></svg></button>
   </div>
 </div>
@@ -866,6 +945,7 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
   let accountsReady = false, account = ''; // username and password login (login.sql)
   let mutes = new Set(), mutesReady = false, themeFeed = null; // muted groups, live backgrounds (funktionen.sql)
   let votes = new Map(), votesReady = false, voteFeed = null; // poll message -> (user -> choice)
+  let people = new Map(), peopleReady = false, groupPicReady = false; // status, birthday, last online by user; group pictures (profil.sql)
   let editing = null; const mentionMe = new Set(); // the message being edited; groups where someone @mentioned me
   let replyTo = null, newFrom = 0, hasOlder = false, loadingOlder = false, filter = 'all';
   const isAdmin = () => admins.has(me);
@@ -1027,6 +1107,7 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     else if (!mobile()) await showChat(groups.has(last) ? last : sortedGroups()[0].id);
     else showList();
     initPush();
+    heartbeat(); celebrateMe();
     if (created) openSheet();
   }
 
@@ -1105,7 +1186,7 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     return g.id;
   }
   // Without update.sql there is no picture or "read until" column yet, so ask for less
-  const GROUP_COLS = ['id,name,invite_code,created_at,is_dm,theme', 'id,name,invite_code,created_at,is_dm', 'id,name,invite_code,created_at'];
+  const GROUP_COLS = ['id,name,invite_code,created_at,is_dm,theme,pic', 'id,name,invite_code,created_at,is_dm,theme', 'id,name,invite_code,created_at,is_dm', 'id,name,invite_code,created_at'];
   const MEMBER_COLS = ['group_id,user_id,name,avatar,last_read', 'group_id,user_id,name,avatar', 'group_id,user_id,name'];
   async function loadGroups(){
     let [gs, ms, mu] = await Promise.all([
@@ -1117,8 +1198,9 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     while (gs.error && ++gl < GROUP_COLS.length) gs = await sb.from('groups').select(GROUP_COLS[gl]).order('created_at'); // older database
     if (gs.error) throw gs.error;
     mutesReady = !mu.error; mutes = new Set(mu.error ? [] : (mu.data || []).map(r => r.group_id));
-    // Backgrounds change live for everyone in the chat (own channel, so an older database cannot break the feed)
-    if (gl === 0 && !themeFeed) themeFeed = sb.channel('groups').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'groups' }, p => onGroupUpdate(p.new)).subscribe();
+    groupPicReady = gl === 0;
+    // Backgrounds, group pictures and names change live for everyone in the chat (own channel, so an older database cannot break the feed)
+    if (gl <= 1 && !themeFeed) themeFeed = sb.channel('groups').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'groups' }, p => onGroupUpdate(p.new)).subscribe();
     let level = 0;
     while (ms.error && ++level < MEMBER_COLS.length) ms = await sb.from('members').select(MEMBER_COLS[level]);
     picsReady = !ms.error && level <= 1; readsReady = !ms.error && level === 0;
@@ -1134,7 +1216,8 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     // A group joined later does not have my picture yet
     if (picsReady && pics.has(me) && rows.some(m => m.user_id === me && m.avatar !== pics.get(me))) fixMyPic();
     renderMe();
-    await loadOverview();
+    await Promise.all([loadOverview(), loadPeople()]);
+    afterPeople();
   }
   function fixMyPic(){ if (picsReady && pics.has(me)) sb.from('members').update({ avatar: pics.get(me) }).eq('user_id', me).then(() => {}, () => {}); }
 
@@ -1215,10 +1298,19 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     el.style.background = colorFor(id); el.textContent = initial(name);
     return el;
   }
-  // Friends' pictures as the group's face, otherwise its first letter
+  // The group's own picture, otherwise friends' pictures, otherwise its first letter
+  const groupPicOf = g => g && typeof g.pic === 'string' && PATH_RE.test(g.pic) ? g.pic : null;
+  function groupAvatar(g, cls = 'av'){
+    const el = document.createElement('span'); el.className = cls;
+    el.style.background = colorFor(g.id); el.textContent = initial(g.name);
+    const pic = groupPicOf(g);
+    if (pic){ const img = document.createElement('img'); img.alt = ''; img.src = mediaUrl(pic); img.onerror = () => img.remove(); el.append(img); }
+    return el;
+  }
   function groupFace(g){
     const wrap = document.createElement('span'); wrap.className = 'gface';
-    if (isDm(g)){ const o = dmOther(g); wrap.append(o ? avatar(o, nameOf(g.id, o)) : chIcon(g.id, '?')); return wrap; }
+    if (isDm(g)){ const o = dmOther(g); wrap.append(o ? avatar(o, nameOf(g.id, o)) : chIcon(g.id, '?')); if (o && isOnline(o)) wrap.classList.add('on'); return wrap; }
+    if (groupPicOf(g)){ wrap.append(groupAvatar(g)); return wrap; }
     const faces = mateIds(g.id).filter(uid => pics.has(uid));
     if (faces.length >= 2){ wrap.classList.add('two'); wrap.append(avatar(faces[0], ''), avatar(faces[1], '')); }
     else if (faces.length === 1) wrap.append(avatar(faces[0], nameOf(g.id, faces[0])));
@@ -1236,7 +1328,9 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
       li.setAttribute('aria-current', String(g.id === current && chatShown()));
       const main = document.createElement('button'); main.type = 'button'; main.className = 'row-main';
       const text = document.createElement('span'); text.className = 'row-text';
-      text.append(Object.assign(document.createElement('span'), { className: 'row-name', textContent: titleOf(g) }), statusLine(g));
+      const rowName = Object.assign(document.createElement('span'), { className: 'row-name', textContent: titleOf(g) });
+      if (bdayMates(g.id).length) rowName.append(Object.assign(document.createElement('span'), { className: 'row-cake', textContent: '🎂', title: 'Heute hat jemand Geburtstag' }));
+      text.append(rowName, statusLine(g));
       main.append(groupFace(g), text);
       main.onclick = () => showChat(g.id);
       onLongPress(main, () => rowMenu(g));
@@ -1327,7 +1421,7 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
   }
   function showList(){
     setView('list');
-    for (const id of ['sheet', 'msheet', 'stk-sheet', 'asheet', 'psheet', 'nsheet', 'qsheet', 'tsheet', 'pollsheet']) $(id).hidden = true;
+    for (const id of ['sheet', 'msheet', 'stk-sheet', 'asheet', 'psheet', 'nsheet', 'qsheet', 'tsheet', 'pollsheet', 'gsheet']) $(id).hidden = true;
     if (!lb.hidden) closeLightbox();
     if (!$('ed').hidden && !ed.busy) closeEditor();
     if (mobile()){
@@ -1365,18 +1459,33 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     current = gid; store.set('lastGroup', gid); unread.delete(gid);
     renderGroups();
     const g = groups.get(gid);
-    const other = isDm(g) ? dmOther(g) : null;
-    $('title').textContent = titleOf(g);
-    const hi = $('head-icon'); hi.style.background = colorFor(other || gid); hi.textContent = initial(titleOf(g));
-    if (other && pics.has(other)){ const img = document.createElement('img'); img.alt = ''; img.src = mediaUrl(pics.get(other)); img.onerror = () => img.remove(); hi.append(img); }
+    renderHead();
     $('invite-btn').hidden = isDm(g);
     $('text').value = store.get('draft:' + gid); autosize(); updateSend();
     msgs = []; hasOlder = false; renderLog.first = true; $('log').innerHTML = LOADING;
-    mentionMe.delete(gid); cancelEdit(true); applyTheme();
+    mentionMe.delete(gid); cancelEdit(true); applyTheme(); renderBday();
     joinRoom(gid);
     await loadMessages(gid);
     markRead(gid);
   }
+  // Name and picture at the top of the chat; a tap shows the person or the group
+  function renderHead(){
+    const g = groups.get(current); if (!g) return;
+    const other = isDm(g) ? dmOther(g) : null, pic = other ? pics.get(other) : groupPicOf(g);
+    $('title').textContent = titleOf(g);
+    const hi = $('head-icon'); hi.style.background = colorFor(other || g.id); hi.textContent = initial(titleOf(g));
+    if (pic){ const img = document.createElement('img'); img.alt = ''; img.src = mediaUrl(pic); img.onerror = () => img.remove(); hi.append(img); }
+    $('head-text').setAttribute('aria-label', isDm(g) ? `Profil von ${titleOf(g)}` : 'Gruppenbild und Name');
+  }
+  function openHead(){
+    const g = groups.get(current); if (!g) return;
+    if (!isDm(g)) return openGroupInfo(g.id);
+    const o = dmOther(g); if (o) openMember(o, nameOf(g.id, o));
+  }
+  $('head-icon').onclick = openHead;
+  $('head-text').onclick = openHead;
+  $('head-text').onkeydown = e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openHead(); } };
+
   // Tell the others how far I have read (the server sets the time)
   function markRead(gid){
     if (!viewing(gid)) return;
@@ -1444,7 +1553,8 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
       .subscribe(status => {
         if (status === 'SUBSCRIBED'){ if (!first) resync(); first = false; }
       });
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') resync(); });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible'){ resync(); heartbeat(); } });
+    setInterval(() => { if (document.visibilityState === 'visible' && peopleReady){ heartbeat(); loadPeople().then(afterPeople, () => {}); } }, 120e3);
     setInterval(() => { if (document.visibilityState === 'visible' && (view === 'list' || !mobile())) renderGroups(); }, 60e3); // "5 Min." keeps counting
   }
   let resyncing = false;
@@ -1562,7 +1672,8 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
       add.onclick = openSheet; strip.append(add);
     }
     const o = ov.get(current), fl = o && o.streak >= 1 ? ' · ' + flame(o) : '';
-    if (!sending) $('status').textContent = (isDm(groups.get(current)) ? (others.length ? 'Gerade da' : 'Privater Chat') : others.length ? `${others.length + 1} online` : 'Nur du bist gerade da') + fl;
+    const g = groups.get(current);
+    if (!sending) $('status').textContent = (isDm(g) ? dmLine(g, others.length > 0) : others.length ? `${others.length + 1} online` : 'Nur du bist gerade da') + fl;
   }
 
   // ---------- Reactions ----------
@@ -1827,8 +1938,14 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     const g = row && groups.get(row.id);
     if (!g) return;
     if ('theme' in row) g.theme = row.theme;
+    if ('pic' in row) g.pic = row.pic;
     if (typeof row.name === 'string') g.name = row.name;
-    if (row.id === current) applyTheme();
+    refreshGroup(g.id);
+  }
+  function refreshGroup(gid){
+    if (gid === current){ applyTheme(); renderHead(); }
+    if (!$('gsheet').hidden && infoGid === gid) renderGroupInfo();
+    if (call?.gid === gid) $('call-title').textContent = titleOf(groups.get(gid));
     renderGroups();
   }
   function openThemes(){
@@ -1925,6 +2042,7 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     openActions({ title: titleOf(g), items: [
       { icon: '🔍', label: 'Im Chat suchen', run: openSearch },
       { icon: '📊', label: 'Umfrage starten', run: openPoll },
+      isDm(g) ? null : { icon: '✏️', label: 'Gruppenbild & Name', run: () => openGroupInfo(g.id) },
       { icon: '🎨', label: 'Hintergrund ändern', run: openThemes },
       { icon: muted ? '🔔' : '🔕', label: muted ? 'Wieder Benachrichtigungen' : 'Stummschalten', run: () => toggleMute(g.id) },
       isDm(g) ? null : { icon: '👥', label: 'Freunde einladen', run: openSheet },
@@ -2002,6 +2120,7 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     ch.on('broadcast', { event: 'sig' }, ({ payload }) => onSignal(c, payload));
     ch.on('broadcast', { event: 'decline' }, ({ payload }) => { if (call === c && c.mine && !c.joined && isDm(groups.get(c.gid)) && payload?.from !== me){ toast('Abgelehnt.'); endCall('declined'); } });
     ch.on('presence', { event: 'sync' }, () => syncPeers(c));
+    ch.on('broadcast', { event: 'emoji' }, ({ payload }) => { if (call === c && payload?.from !== me && CALL_EMOJIS.includes(payload?.e)) flyEmoji(payload.e, nameOf(c.gid, payload.from) || c.ch.presenceState()[payload.from]?.[0]?.name || 'Jemand'); });
     ch.subscribe(status => {
       if (status === 'SUBSCRIBED') trackMe();
       else if ((status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') && call === c && !c.joined) toast('Die Verbindung zum Anruf klappt gerade nicht.');
@@ -2098,7 +2217,7 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     c.stream.getTracks().forEach(t => t.stop());
     try { await c.ch.untrack(); } catch {}
     sb.removeChannel(c.ch);
-    $('call').hidden = true; $('call-grid').replaceChildren();
+    $('call').hidden = true; $('call-grid').replaceChildren(); $('call-fx').replaceChildren(); showCallEmojis(false);
     const self = $('call-self'); self.srcObject = null; self.hidden = true;
     keepAwake(false);
     if (c.mine){
@@ -2186,6 +2305,35 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     c.stream.removeTrack(old); old.stop(); c.stream.addTrack(track);
     c.facing = facing; $('call-self').srcObject = null; renderCall();
   };
+  // Emojis: they float up over the video, for everyone in the call
+  const CALL_EMOJIS = ['❤️', '😂', '👍', '🎉', '🔥', '😮'];
+  for (const e of CALL_EMOJIS){
+    const b = Object.assign(document.createElement('button'), { type: 'button', textContent: e });
+    b.setAttribute('aria-label', `${e} schicken`);
+    b.onclick = () => sendEmoji(e);
+    $('call-emojis').append(b);
+  }
+  function showCallEmojis(on){ $('call-emojis').hidden = !on; $('call-react').setAttribute('aria-expanded', String(on)); }
+  $('call-react').onclick = () => showCallEmojis($('call-emojis').hidden);
+  function sendEmoji(e){
+    const c = call;
+    if (!c || Date.now() - (c.lastEmoji || 0) < 250) return;
+    c.lastEmoji = Date.now();
+    flyEmoji(e, 'Ich');
+    Promise.resolve(c.ch.send({ type: 'broadcast', event: 'emoji', payload: { from: me, e } })).catch(() => {});
+  }
+  function flyEmoji(e, who){
+    const fx = $('call-fx');
+    if (fx.childElementCount > 24) return;
+    const el = document.createElement('span'); el.className = 'fly';
+    el.style.left = (6 + Math.random() * 74).toFixed(1) + '%';
+    el.style.setProperty('--dx', Math.round((Math.random() - 0.5) * 90) + 'px');
+    el.append(Object.assign(document.createElement('b'), { textContent: e }), Object.assign(document.createElement('small'), { textContent: who }));
+    el.addEventListener('animationend', () => el.remove());
+    setTimeout(() => el.remove(), 4000);
+    fx.append(el);
+  }
+
   async function keepAwake(on){
     try {
       if (on && navigator.wakeLock && !wakeLock) wakeLock = await navigator.wakeLock.request('screen');
@@ -3025,7 +3173,7 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     $('ed-outline').setAttribute('aria-pressed', String(ed.outline));
     $('ed-zoom').value = String(ed.s / ed.base);
   }
-  async function openEditor(file, mode = 'sticker'){
+  async function openEditor(file, mode = 'sticker', target = null){
     if (!file.type.startsWith('image/')){ toast(mode === 'avatar' ? 'Für ein Profilbild brauchst du ein Bild.' : 'Für einen Sticker brauchst du ein Bild.'); return; }
     let bmp;
     try { bmp = await createImageBitmap(file); } catch { toast('Dieses Bild kann dein Browser nicht öffnen.'); return; }
@@ -3033,12 +3181,12 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     const c = Object.assign(document.createElement('canvas'), { width: Math.max(1, Math.round(bmp.width * k)), height: Math.max(1, Math.round(bmp.height * k)) });
     c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height); if (bmp.close) bmp.close();
     if ($('ed').hidden){ ed.text = ''; $('ed-text').value = ''; }
-    Object.assign(ed, { mode, img: c, mask: null, box: null, cut: false, base: S / Math.min(c.width, c.height), x: S / 2, y: S / 2 });
+    Object.assign(ed, { mode, target, img: c, mask: null, box: null, cut: false, base: S / Math.min(c.width, c.height), x: S / 2, y: S / 2 });
     ed.s = ed.base;
     $('ed').classList.toggle('avatar', mode === 'avatar');
-    $('ed-title').textContent = mode === 'avatar' ? 'Profilbild' : 'Sticker machen';
+    $('ed-title').textContent = mode === 'avatar' ? (target ? 'Gruppenbild' : 'Profilbild') : 'Sticker machen';
     $('ed-send').textContent = mode === 'avatar' ? 'Übernehmen' : 'Senden';
-    closeStickers(); closeProfile(); $('ed').hidden = false;
+    closeStickers(); closeProfile(); closeGroupInfo(); $('ed').hidden = false;
     syncEd(); compose();
     if (document.fonts) document.fonts.load('900 64px Nunito').then(redraw, () => {});
   }
@@ -3103,7 +3251,7 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
   $('ed-outline').onclick = () => { ed.outline = !ed.outline; syncEd(); redraw(); };
   $('ed-text').addEventListener('input', e => { ed.text = e.target.value.trim(); redraw(); });
   $('ed-text').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); e.target.blur(); } });
-  $('ed-photo').onclick = () => $(ed.mode === 'avatar' ? 'pfp-input' : 'stk-input').click();
+  $('ed-photo').onclick = () => $(ed.mode === 'avatar' ? (ed.target ? 'gpic-input' : 'pfp-input') : 'stk-input').click();
   $('ed-close').onclick = () => { if (!ed.busy) closeEditor(); };
 
   // Moving with one finger, zooming with two (or the mouse wheel, or the slider)
@@ -3146,12 +3294,12 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     return webp && webp.type === 'image/webp' ? webp : await new Promise(r => c.toBlob(r, 'image/jpeg', 0.88));
   }
   async function finishSticker(send){
-    const pfp = ed.mode === 'avatar';
+    const pfp = ed.mode === 'avatar', target = pfp && ed.target && groups.has(ed.target) ? ed.target : null;
     // A profile picture can be made from the chat list, where no group is open: any of my groups can hold the file
-    const gid = current && groups.has(current) ? current : pfp ? sortedGroups()[0]?.id : null;
+    const gid = target || (current && groups.has(current) ? current : pfp ? sortedGroups()[0]?.id : null);
     if (!ed.img || ed.busy) return;
     if (!gid){ toast(pfp ? 'Tritt zuerst einer Gruppe bei, dann klappt das Profilbild.' : 'Öffne zuerst eine Gruppe.'); return; }
-    if (pfp && !picsReady){ toast(NO_PICS); return; }
+    if (pfp && !(target ? groupPicReady : picsReady)){ toast(target ? NEEDS_PROFIL : NO_PICS); return; }
     ed.busy = true;
     const keep = $('ed-keep'), go = $('ed-send');
     keep.disabled = go.disabled = true;
@@ -3163,6 +3311,11 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
       if (!blob) throw new Error('no picture');
       const type = OK_TYPES.includes(blob.type) ? blob.type : 'image/png';
       path = await upload(gid, blob, extOf(type), type);
+      if (target){
+        await setGroupPic(target, path);
+        closeEditor(); openGroupInfo(target); toast('Gruppenbild gespeichert. Alle in der Gruppe sehen es.');
+        return;
+      }
       if (pfp){
         await setMyPic(path);
         closeEditor(); openProfile(); toast('Profilbild gespeichert.');
@@ -3174,7 +3327,7 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
       if (!send){ toast('Sticker gespeichert.'); openStickers(); }
     } catch (err){
       if (path && (send || pfp)) sb.storage.from('media').remove([path]).catch(() => {});
-      toast(errText(err, pfp ? 'Profilbild speichern hat nicht geklappt.' : send ? 'Sticker senden hat nicht geklappt.' : 'Sticker speichern hat nicht geklappt.'));
+      toast(errText(err, target ? 'Gruppenbild speichern hat nicht geklappt.' : pfp ? 'Profilbild speichern hat nicht geklappt.' : send ? 'Sticker senden hat nicht geklappt.' : 'Sticker speichern hat nicht geklappt.'));
     } finally {
       ed.busy = false; keep.disabled = go.disabled = false;
       keep.textContent = 'Speichern'; go.textContent = pfp ? 'Übernehmen' : 'Senden';
@@ -3709,6 +3862,210 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     renderLog(); renderPeople(); renderMe(); toast('Name gespeichert.');
   });
 
+  // ---------- About people: status, birthday, last online (profil.sql) ----------
+  const BDAY_RE = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+  const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+  const STATUS_IDEAS = ['🎮 Am Gamen', '📚 Hausaufgaben', '⚽ Im Training', '🎧 Musik hören', '🍕 Am Essen', '😴 Schlafe'];
+  const NEEDS_PROFIL = 'Das ist noch nicht eingerichtet. Führe zuerst profil.sql in Supabase aus.';
+  async function loadPeople(){
+    const { data, error } = await sb.rpc('people');
+    peopleReady = !error && Array.isArray(data);
+    if (!peopleReady) return;
+    people = new Map(data.map(r => [r.user_id, {
+      status: typeof r.status === 'string' ? r.status : '',
+      birthday: BDAY_RE.test(r.birthday || '') ? r.birthday : '',
+      seen: (r.seen_at && Date.parse(r.seen_at)) || 0,
+      showSeen: r.show_seen !== false,
+    }]));
+  }
+  function afterPeople(){
+    if (!peopleReady) return;
+    renderGroups();
+    if (current){ renderPeople(); renderBday(); }
+  }
+  const personOf = uid => people.get(uid) || { status: '', birthday: '', seen: 0, showSeen: true };
+  // "Online" means the page was open in the last three minutes (it reports every two)
+  const isOnline = uid => { const t = people.get(uid)?.seen; return !!t && Date.now() - t < 3 * 60e3; };
+  function seenText(uid){
+    const t = people.get(uid)?.seen;
+    if (!t) return '';
+    const min = Math.floor(Math.max(0, Date.now() - t) / 60e3);
+    if (min < 3) return 'Online';
+    if (min < 60) return `Zuletzt online vor ${min} Min.`;
+    const h = Math.floor(min / 60); if (h < 24) return `Zuletzt online vor ${h} Std.`;
+    const d = Math.floor(h / 24); if (d < 7) return d === 1 ? 'Zuletzt online vor 1 Tag' : `Zuletzt online vor ${d} Tagen`;
+    return 'Länger nicht online';
+  }
+  function dmLine(g, here){
+    const o = dmOther(g);
+    return [here ? 'Gerade da' : seenText(o), personOf(o).status].filter(Boolean).join(' · ') || 'Privater Chat';
+  }
+  function heartbeat(){
+    if (!peopleReady || !me || document.visibilityState !== 'visible') return;
+    sb.rpc('seen').then(({ data, error }) => { const t = !error && Date.parse(data); if (t) people.set(me, { ...personOf(me), seen: t }); }, () => {});
+  }
+
+  // Birthdays: only day and month are saved
+  const dayStamp = () => new Date().toDateString();
+  function hasBday(uid){
+    const b = people.get(uid)?.birthday;
+    if (!b) return false;
+    const now = new Date(), t = String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    // Born on 29 February: in years without that day it is the 28th
+    return b === t || (b === '02-29' && t === '02-28' && new Date(now.getFullYear(), 1, 29).getMonth() !== 1);
+  }
+  const fmtBday = b => { const [m, d] = b.split('-').map(Number); return `${d}. ${MONTHS[m - 1]}`; };
+  const bdayMates = gid => peopleReady ? mateIds(gid).filter(hasBday) : [];
+  const andList = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' und ' + a[a.length - 1];
+  // Someone in the open chat has a birthday: a bar to congratulate, and confetti once that day
+  function renderBday(){
+    const bar = $('bdaybar'), gid = current, who = gid ? bdayMates(gid) : [];
+    if (!who.length || store.get('bday:' + gid) === dayStamp()){ bar.hidden = true; return; }
+    const ns = who.map(uid => nameOf(gid, uid) || 'Jemand');
+    $('bday-text').textContent = `🎂 ${andList(ns)} ${ns.length === 1 ? 'hat' : 'haben'} heute Geburtstag!`;
+    bar.hidden = false;
+    if (viewing(gid) && store.get('confetti:' + gid) !== dayStamp()){ store.set('confetti:' + gid, dayStamp()); confetti(); }
+  }
+  $('bday-go').onclick = async () => {
+    const gid = current, who = gid ? bdayMates(gid) : [];
+    if (!who.length) return;
+    store.set('bday:' + gid, dayStamp()); renderBday(); confetti();
+    const text = `🎂 Alles Gute zum Geburtstag, ${andList(who.map(uid => '@' + (nameOf(gid, uid) || 'Jemand')))}! 🎉`;
+    try { await insertMessage(gid, { kind: 'text', text }); }
+    catch (err){ toast(errText(err, 'Senden hat nicht geklappt.')); }
+  };
+  $('bday-x').onclick = () => { if (current) store.set('bday:' + current, dayStamp()); renderBday(); };
+  function celebrateMe(){
+    if (!hasBday(me) || store.get('mybday') === dayStamp()) return;
+    store.set('mybday', dayStamp());
+    setTimeout(() => { confetti(); toast(`🎂 Alles Gute zum Geburtstag, ${myName}! 🎉`); }, 700);
+  }
+  function confetti(){
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const c = document.createElement('canvas'); c.className = 'confetti'; c.setAttribute('aria-hidden', 'true');
+    const W = innerWidth, H = innerHeight, dpr = Math.min(2, devicePixelRatio || 1);
+    c.width = W * dpr; c.height = H * dpr; document.body.append(c);
+    const g = c.getContext('2d'); g.scale(dpr, dpr);
+    const colors = ['#fffc00', '#f23c57', '#0a9ff0', '#0fa968', '#7b2ff7', '#ff9f1c'];
+    const bits = Array.from({ length: 160 }, () => ({ x: Math.random() * W, y: -20 - Math.random() * H * 0.7, vx: (Math.random() - 0.5) * 3, vy: 2 + Math.random() * 3,
+      r: Math.random() * 6.3, vr: (Math.random() - 0.5) * 0.3, w: 6 + Math.random() * 6, h: 9 + Math.random() * 8, c: colors[Math.floor(Math.random() * colors.length)] }));
+    const t0 = performance.now();
+    const step = now => {
+      const t = now - t0;
+      g.clearRect(0, 0, W, H); g.globalAlpha = t > 3000 ? Math.max(0, 1 - (t - 3000) / 1000) : 1;
+      for (const b of bits){
+        b.x += b.vx; b.y += b.vy; b.vy += 0.04; b.r += b.vr;
+        g.save(); g.translate(b.x, b.y); g.rotate(b.r); g.fillStyle = b.c; g.fillRect(-b.w / 2, -b.h / 2, b.w, b.h * Math.abs(Math.cos(b.r * 1.7))); g.restore();
+      }
+      if (t < 4000) requestAnimationFrame(step); else c.remove();
+    };
+    requestAnimationFrame(step);
+  }
+
+  // In my profile: status, birthday and whether others see when I was online
+  $('bday-day').append(new Option('Tag', ''), ...Array.from({ length: 31 }, (_, i) => new Option(String(i + 1), String(i + 1))));
+  $('bday-month').append(new Option('Monat', ''), ...MONTHS.map((n, i) => new Option(n, String(i + 1))));
+  for (const idea of STATUS_IDEAS){
+    const b = Object.assign(document.createElement('button'), { type: 'button', textContent: idea });
+    b.onclick = () => { $('my-status').value = idea; saveStatus(); };
+    $('status-chips').append(b);
+  }
+  function renderAbout(){
+    $('about').hidden = !peopleReady;
+    if (!peopleReady) return;
+    const p = personOf(me), [m, d] = p.birthday ? p.birthday.split('-').map(Number) : [0, 0];
+    $('my-status').value = p.status;
+    $('bday-day').value = d ? String(d) : ''; $('bday-month').value = m ? String(m) : '';
+    $('show-seen').checked = p.showSeen;
+  }
+  async function saveAbout(patch){
+    const { error } = await sb.rpc('set_profile', { p: patch });
+    if (error){ toast(/schema cache|does not exist|function/i.test(error.message || '') ? NEEDS_PROFIL : 'Speichern hat nicht geklappt. Versuch es nochmal.'); return false; }
+    const p = { ...personOf(me) };
+    if ('status' in patch) p.status = patch.status;
+    if ('birthday' in patch) p.birthday = patch.birthday;
+    if ('show_seen' in patch) p.showSeen = patch.show_seen;
+    people.set(me, p);
+    return true;
+  }
+  async function saveStatus(){
+    const v = $('my-status').value.replace(/\s+/g, ' ').trim().slice(0, 60);
+    $('my-status').value = v;
+    if (v === personOf(me).status){ toast(v ? 'Das ist schon dein Status.' : 'Du hast noch keinen Status.'); return; }
+    if (await saveAbout({ status: v })) toast(v ? 'Status gespeichert. Deine Freunde sehen ihn, wenn sie auf deinen Namen tippen.' : 'Status gelöscht.');
+  }
+  $('status-form').onsubmit = e => { e.preventDefault(); saveStatus(); };
+  async function saveBday(){
+    const d = Number($('bday-day').value), m = Number($('bday-month').value);
+    if (!d !== !m) return; // wait until both are chosen
+    let v = '';
+    if (d && m){
+      if (d > new Date(2024, m, 0).getDate()){ toast(`Den ${d}. ${MONTHS[m - 1]} gibt es nicht.`); return; }
+      v = String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    }
+    if (v === personOf(me).birthday) return;
+    if (await saveAbout({ birthday: v })){ toast(v ? `Geburtstag gespeichert: ${fmtBday(v)} 🎂` : 'Geburtstag gelöscht.'); renderGroups(); celebrateMe(); }
+    else renderAbout();
+  }
+  $('bday-day').onchange = saveBday;
+  $('bday-month').onchange = saveBday;
+  $('show-seen').onchange = async e => {
+    const on = e.target.checked;
+    if (await saveAbout({ show_seen: on })) toast(on ? 'Deine Freunde sehen, wann du zuletzt online warst.' : 'Niemand sieht mehr, wann du zuletzt online warst.');
+    else e.target.checked = !on;
+  };
+
+  // ---------- Group picture and name: everyone in the group can change them ----------
+  let infoGid = null;
+  function openGroupInfo(gid){
+    const g = groups.get(gid);
+    if (!g || isDm(g)) return;
+    if (!groupPicReady){ toast(NEEDS_PROFIL); return; }
+    infoGid = gid; $('gname').value = g.name;
+    $('gsheet').hidden = false; renderGroupInfo();
+  }
+  function renderGroupInfo(){
+    const g = groups.get(infoGid);
+    if (!g){ closeGroupInfo(); return; }
+    $('gpic-slot').replaceChildren(groupAvatar(g, 'av big'));
+    const has = !!groupPicOf(g), del = $('gpic-del');
+    del.hidden = !has; del.textContent = 'Entfernen'; del.classList.remove('armed');
+    $('gpic-pick').textContent = has ? 'Neues Foto' : 'Foto wählen';
+    $('gpic-note').textContent = `Alle ${mateIds(g.id).length + 1} in der Gruppe sehen das Bild und den Namen und können sie ändern.`;
+  }
+  const closeGroupInfo = () => { $('gsheet').hidden = true; };
+  $('gsheet-close').onclick = closeGroupInfo;
+  $('gsheet').addEventListener('click', e => { if (e.target === $('gsheet')) closeGroupInfo(); });
+  $('gpic-btn').onclick = () => $('gpic-input').click();
+  $('gpic-pick').onclick = () => $('gpic-input').click();
+  $('gpic-input').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f && infoGid) openEditor(f, 'avatar', infoGid); });
+  async function setGroupPic(gid, path){
+    const { error } = await sb.rpc('set_group_pic', { g: gid, p: path });
+    if (error) throw error;
+    const g = groups.get(gid), old = groupPicOf(g);
+    if (g) g.pic = path;
+    if (old && old !== path) sb.storage.from('media').remove([old]).catch(() => {}); // only works for whoever uploaded it
+    refreshGroup(gid);
+  }
+  $('gpic-del').onclick = async () => {
+    const btn = $('gpic-del');
+    if (!btn.classList.contains('armed')){ btn.classList.add('armed'); btn.textContent = 'Wirklich?'; return; }
+    try { await setGroupPic(infoGid, null); toast('Gruppenbild entfernt.'); }
+    catch { toast('Entfernen hat nicht geklappt.'); renderGroupInfo(); }
+  };
+  $('gname-form').onsubmit = async e => {
+    e.preventDefault();
+    const gid = infoGid, g = groups.get(gid), n = $('gname').value.replace(/\s+/g, ' ').trim().slice(0, 40);
+    if (!g) return;
+    if (!n){ toast('Die Gruppe braucht einen Namen.'); return; }
+    if (n === g.name){ closeGroupInfo(); return; }
+    const { data, error } = await sb.rpc('rename_group', { g: gid, n });
+    if (error){ toast(/schema cache|does not exist|function/i.test(error.message || '') ? NEEDS_PROFIL : 'Umbenennen hat nicht geklappt.'); return; }
+    g.name = typeof data === 'string' && data ? data : n;
+    refreshGroup(gid); closeGroupInfo();
+    toast(`Die Gruppe heißt jetzt „${g.name}“.`);
+  };
+
   // ---------- Your profile: picture and name ----------
   const NO_PICS = 'Profilbilder sind noch nicht eingerichtet. Führe zuerst update.sql in Supabase aus.';
   function renderMe(){
@@ -3726,7 +4083,7 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     $('acct-row').hidden = !accountsReady || !account;
     $('acct-text').textContent = `Eingeloggt als @${account}. Auf einem anderen Handy einfach mit Benutzername und Passwort einloggen.`;
     for (const [id, label] of [['logout-btn', 'Abmelden'], ['delacct-btn', 'Account löschen']]){ const b = $(id); b.classList.remove('armed'); b.textContent = label; b.disabled = false; }
-    $('psheet').hidden = false; renderMe();
+    $('psheet').hidden = false; renderMe(); renderAbout();
   }
   const closeProfile = () => { $('psheet').hidden = true; };
   async function setMyPic(path){
@@ -3821,8 +4178,17 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     $('msheet-title').textContent = name + crown(uid);
     $('msheet-text').textContent = inDm ? 'Das ist euer privater Chat. Nur ihr zwei seht ihn.' : `In „${titleOf(g)}“. Ein privater Chat ist nur für euch zwei.`;
     $('msheet-dm').hidden = inDm;
+    fillPerson(uid);
+    if (peopleReady) loadPeople().then(() => { if (kickUid === uid && !$('msheet').hidden) fillPerson(uid); }, () => {});
     const kick = $('msheet-kick'); kick.hidden = !isAdmin() || inDm || !g; kick.classList.remove('armed'); kick.textContent = 'Aus der Gruppe entfernen';
     $('msheet').hidden = false;
+  }
+  function fillPerson(uid){
+    const p = personOf(uid), st = $('msheet-status'), meta = $('msheet-meta'), bits = [], seen = seenText(uid);
+    st.hidden = !p.status; st.textContent = p.status ? `„${p.status}“` : '';
+    if (seen) bits.push(seen === 'Online' ? '🟢 Online' : seen);
+    if (p.birthday) bits.push(hasBday(uid) ? '🎂 Hat heute Geburtstag!' : `🎂 ${fmtBday(p.birthday)}`);
+    meta.hidden = !bits.length; meta.textContent = bits.join(' · ');
   }
   const closeMember = () => { $('msheet').hidden = true; kickUid = null; };
   $('msheet-close').onclick = closeMember;
@@ -3867,7 +4233,11 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     const list = $('dm-list'); list.replaceChildren();
     for (const [uid, n] of [...people].sort((a, b) => a[1].localeCompare(b[1], 'de'))){
       const b = Object.assign(document.createElement('button'), { type: 'button', className: 'pick' });
-      b.append(avatar(uid, n), Object.assign(document.createElement('span'), { className: 'pick-name', textContent: n + crown(uid) }));
+      const txt = Object.assign(document.createElement('span'), { className: 'pick-text' });
+      txt.append(Object.assign(document.createElement('span'), { className: 'pick-name', textContent: n + crown(uid) }));
+      const sub = [isOnline(uid) ? '🟢 Online' : '', personOf(uid).status, hasBday(uid) ? '🎂 Geburtstag' : ''].filter(Boolean).join(' · ');
+      if (sub) txt.append(Object.assign(document.createElement('span'), { className: 'pick-sub', textContent: sub }));
+      b.append(avatar(uid, n), txt);
       b.onclick = () => { closeNew(); openDm(uid); };
       list.append(b);
     }
@@ -3901,7 +4271,7 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     if (!$('msheet').hidden) closeMember();
     if (!$('psheet').hidden) closeProfile();
     if (!$('nsheet').hidden) closeNew();
-    for (const id of ['qsheet', 'tsheet', 'pollsheet']) if (!$(id).hidden) $(id).hidden = true;
+    for (const id of ['qsheet', 'tsheet', 'pollsheet', 'gsheet']) if (!$(id).hidden) $(id).hidden = true;
     if (editing && document.activeElement === $('text')) cancelEdit();
     if (!$('asheet').hidden) closeActions();
     if (!$('stk-sheet').hidden) closeStickers();
