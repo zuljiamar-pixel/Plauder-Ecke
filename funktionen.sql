@@ -21,10 +21,10 @@ grant execute on function public.set_theme(uuid, text) to authenticated;
 /* ---------- Nachrichten bearbeiten: nur den Text der eigenen Nachrichten ---------- */
 alter table public.messages add column if not exists edited_at timestamptz;
 alter table public.messages drop constraint if exists messages_kind_check;
-alter table public.messages add constraint messages_kind_check check (kind in ('text', 'image', 'video', 'audio', 'poll'));
+alter table public.messages add constraint messages_kind_check check (kind in ('text', 'image', 'video', 'audio', 'poll', 'call'));
 
 create or replace function public.message_edited() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = public as $$
 begin
   if new.text is distinct from old.text then
     if old.kind = 'text' and btrim(new.text) = '' then raise exception 'empty message'; end if;
@@ -109,6 +109,7 @@ language sql stable security definer set search_path = public as $$
       when 'video' then '🎬 Video' || case when coalesce(t, '') <> '' then ' ' || t else '' end
       when 'image' then '📷 Foto' || case when coalesce(t, '') <> '' then ' ' || t else '' end
       when 'poll' then '📊 Umfrage: ' || coalesce(t, '')
+      when 'call' then case when t = 'video' then '📹 Videoanruf' else '📞 Anruf' end || ' – tippen zum Abnehmen'
       else coalesce(t, '') end as txt),
   who as (
     select mem.user_id,

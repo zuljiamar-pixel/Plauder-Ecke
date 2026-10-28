@@ -149,7 +149,7 @@ Deno.serve(async (req: Request) => {
     let sent = 0;
     let removed = 0;
     await Promise.all(rows.map(async (r: any) => {
-      const payload = JSON.stringify({ title: r.title, body: r.body, group: m.group_id });
+      const payload = JSON.stringify({ title: r.title, body: r.body, group: m.group_id, kind: m.kind, id: m.id });
       try {
         const status = await sendPush(r, payload, cfg);
         if (status === 404 || status === 410) { await db`delete from public.push_subscriptions where endpoint = ${r.endpoint}`; removed++; }

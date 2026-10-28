@@ -131,6 +131,18 @@ So geht's in der App:
 - **Eigene Nachricht gedrückt halten › Bearbeiten:** Danach steht „bearbeitet“ dabei.
 - **Hintergrund:** Eine Farbe oder ein eigenes Foto. Alle im Chat sehen den gleichen.
 
+## Sprach- und Videoanrufe
+
+1. Im Supabase **SQL Editor** den ganzen Text aus `anrufe.sql` einfügen und **Run** tippen (braucht vorher `funktionen.sql`). Unten steht dann **Anrufe sind bereit!**
+2. Die Benachrichtigungs-Funktion wie oben bei Schritt 2 neu einfügen und **Deploy** tippen, damit es auch bei geschlossener App klingelt.
+
+So geht's in der App:
+- **📞 oder 📹 oben im Chat:** Anruf oder Videoanruf starten. Bei den anderen klingelt es (auch als Benachrichtigung).
+- **Abnehmen:** Auf den grünen Knopf tippen. Wer es verpasst hat, tippt im Chat auf **Beitreten**, solange der Anruf läuft.
+- **Im Anruf:** Mikrofon an/aus, Kamera an/aus, Kamera wechseln, rot = auflegen. Bis zu etwa 6 Leute gehen gut.
+- Beim ersten Anruf fragt das Handy, ob die Website Mikrofon und Kamera benutzen darf: **Erlauben** tippen.
+- Anrufe gehen direkt von Handy zu Handy. In ganz wenigen Handynetzen oder Schul-WLANs klappt die Verbindung nicht (dann bleibt „verbindet …“ stehen). Dann ins WLAN wechseln oder nochmal anrufen.
+
 ## Gut zu wissen
 
 - Supabase gratis: 1 GB für Fotos, Videos und Sprachnachrichten, einzelne Dateien bis 50 MB. Für eine Freundesgruppe reicht das lange.
