@@ -141,7 +141,17 @@ So geht's in der App:
 - **Abnehmen:** Auf den grünen Knopf tippen. Wer es verpasst hat, tippt im Chat auf **Beitreten**, solange der Anruf läuft.
 - **Im Anruf:** Mikrofon an/aus, Kamera an/aus, Kamera wechseln, rot = auflegen. Bis zu etwa 6 Leute gehen gut.
 - Beim ersten Anruf fragt das Handy, ob die Website Mikrofon und Kamera benutzen darf: **Erlauben** tippen.
-- Anrufe gehen direkt von Handy zu Handy. In ganz wenigen Handynetzen oder Schul-WLANs klappt die Verbindung nicht (dann bleibt „verbindet …“ stehen). Dann ins WLAN wechseln oder nochmal anrufen.
+- Anrufe gehen direkt von Handy zu Handy. Im Handynetz oder in manchen WLANs finden sich zwei Handys aber nicht (dann bleibt „verbindet …“ stehen). Dafür gibt es den TURN-Server unten.
+
+### Anrufe übers Handynetz: TURN-Server von Cloudflare (gratis)
+
+1. Auf [dash.cloudflare.com](https://dash.cloudflare.com) einen gratis Account machen.
+2. Links **Realtime** › **TURN Server** › **Create** tippen, einen Namen eingeben (z. B. `plauderecke`).
+3. Cloudflare zeigt eine **Turn Token ID** und einen **API Token**. Beide kopieren (der API Token wird nur einmal gezeigt).
+4. In Supabase: **Edge Functions** › **Secrets** zwei Einträge machen: `CF_TURN_KEY_ID` = Turn Token ID, `CF_TURN_TOKEN` = API Token.
+5. Die Edge Function `turn` (Code aus `supabase/functions/turn/index.ts`) anlegen, „Verify JWT“ aus.
+
+Für Fehlerberichte nach jedem Anruf einmal `anrufe2.sql` im SQL Editor ausführen. Gespeichert wird nur Technik (wie sich die Handys gefunden haben), kein Ton und kein Bild.
 
 ## Status, Geburtstage, „Zuletzt online“, Gruppenbild und Gruppenname
 

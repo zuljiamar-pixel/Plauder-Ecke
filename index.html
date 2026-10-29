@@ -2054,6 +2054,25 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
   // directly to each other (WebRTC); they find each other over a Supabase channel named after the message.
   // The message text is "audio"/"video" while it runs, then "ended:<seconds>", "missed" or "declined".
   const ICE = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
+  // Phones that cannot reach each other directly (often on mobile data) talk through a TURN server from Cloudflare.
+  // Its passwords come from our own function "turn" and are kept for a few hours.
+  let iceCache = null;
+  async function iceServers(){
+    if (iceCache && iceCache.until > Date.now()) return iceCache;
+    let extra = [];
+    try {
+      const { data } = await sb.auth.getSession();
+      const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 5000);
+      const r = await fetch(cfg.url + '/functions/v1/turn', { headers: { apikey: cfg.key, Authorization: 'Bearer ' + (data?.session?.access_token || cfg.key) }, signal: ctl.signal });
+      clearTimeout(t);
+      const d = r.ok ? await r.json() : null;
+      // Port 53 is blocked by browsers and only slows things down
+      if (Array.isArray(d?.iceServers)) extra = d.iceServers.filter(x => x && x.urls)
+        .map(x => ({ ...x, urls: [].concat(x.urls).filter(u => typeof u === 'string' && /^(stun|turns?):/.test(u) && !/:53(\?|$)/.test(u)) })).filter(x => x.urls.length);
+    } catch {}
+    iceCache = { list: ICE.concat(extra), turn: extra.length > 0, until: Date.now() + (extra.length ? 5 * 3600e3 : 5 * 60e3) };
+    return iceCache;
+  }
   const RING_MS = 45000, CALL_FRESH = 2 * 3600e3;
   let call = null, ringing = null, ringtone = 0, ringback = 0, wakeLock = null;
   const callVideo = m => m.media?.video === true;
@@ -2091,7 +2110,7 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
   async function startCall(video){
     const gid = current;
     if (!gid || call || rec.state !== 'idle') return;
-    const stream = await getMedia(video);
+    const [stream] = await Promise.all([getMedia(video), iceServers()]);
     if (!stream) return;
     const { data, error } = await sb.from('messages').insert({ group_id: gid, kind: 'call', text: video ? 'video' : 'audio', media: { video } }).select().single();
     if (error || !data){
@@ -2105,7 +2124,7 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
   async function joinCall(m, video){
     if (call || !m) return;
     stopRing();
-    const stream = await getMedia(video);
+    const [stream] = await Promise.all([getMedia(video), iceServers()]);
     if (!stream) return;
     if (m.gid !== current || !chatShown()) await showChat(m.gid);
     enterCall(m, stream);
@@ -2114,7 +2133,8 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
   function enterCall(m, stream){
     stopRing();
     const cam = stream.getVideoTracks().length > 0;
-    call = { id: m.id, gid: m.gid, mine: m.by === me, stream, peers: new Map(), joined: false, t0: 0, mic: true, cam, facing: 'user', ringT: 0, aloneT: 0, timer: 0 };
+    call = { id: m.id, gid: m.gid, mine: m.by === me, stream, peers: new Map(), joined: false, t0: 0, mic: true, cam, camAtStart: cam, facing: 'user', ringT: 0, aloneT: 0, timer: 0,
+      ice: iceCache?.list || ICE, turn: !!iceCache?.turn };
     const c = call, ch = sb.channel('call:' + m.id, { config: { broadcast: { self: false }, presence: { key: me } } });
     c.ch = ch;
     ch.on('broadcast', { event: 'sig' }, ({ payload }) => onSignal(c, payload));
@@ -2150,12 +2170,18 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
   // first offer arrives, so offers do not cross at the start. Later changes (camera on) may still cross:
   // then "perfect negotiation" decides, the polite side gives way.
   function makePeer(c, uid){
-    const pc = new RTCPeerConnection({ iceServers: ICE });
-    const p = { uid, pc, polite: me > uid, makingOffer: false, ignoreOffer: false, pending: [], stream: new MediaStream(), meta: {}, waiting: me > uid };
+    let pc;
+    try { pc = new RTCPeerConnection({ iceServers: c.ice }); } catch { pc = new RTCPeerConnection({ iceServers: ICE }); }
+    const p = { uid, pc, polite: me > uid, makingOffer: false, ignoreOffer: false, pending: [], stream: new MediaStream(), meta: {}, waiting: me > uid,
+      log: { descIn: 0, descOut: 0, iceIn: 0, iceOut: 0, tracks: [], states: [] } };
+    const note = st => { if (p.log.states.at(-1) !== st && p.log.states.length < 16) p.log.states.push(st); };
     c.peers.set(uid, p);
     if (!p.waiting) for (const t of c.stream.getTracks()) pc.addTrack(t, c.stream);
+    // The other side's stream as they sent it; a new track makes the tile attach it again (some phones need that)
     pc.ontrack = e => {
-      if (!p.stream.getTracks().includes(e.track)) p.stream.addTrack(e.track);
+      const s = e.streams && e.streams[0];
+      if (s) p.stream = s; else if (!p.stream.getTracks().includes(e.track)) p.stream.addTrack(e.track);
+      p.fresh = true; p.log.tracks.push(e.track.kind);
       e.track.onunmute = e.track.onmute = e.track.onended = () => renderCall();
       renderCall();
     };
@@ -2165,14 +2191,26 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
       catch (err){ console.warn(err); }
       finally { p.makingOffer = false; }
     };
-    pc.onconnectionstatechange = () => { if (pc.connectionState === 'failed' && pc.restartIce) pc.restartIce(); renderCall(); };
-    // Not connected after a while: start over (an ICE restart also untangles offers that crossed badly)
+    pc.oniceconnectionstatechange = () => note('ice:' + pc.iceConnectionState);
+    pc.onconnectionstatechange = () => {
+      note(pc.connectionState);
+      if (pc.connectionState === 'connected') p.since = 0;
+      else if (pc.connectionState === 'disconnected' && !p.since) p.since = Date.now();
+      if (pc.connectionState === 'failed'){
+        if (!c.failHint){ c.failHint = true; toast(c.turn ? 'Die Verbindung klappt gerade nicht. Sie wird nochmal versucht.' : 'Eure Handys finden sich nicht. Versucht es beide im WLAN.'); }
+        if (!p.polite && pc.restartIce){ pc.restartIce(); p.since = Date.now(); note('restart'); }
+      }
+      renderCall();
+    };
+    // Still not connected after 25 seconds: start over (an ICE restart also untangles offers that crossed badly).
+    // Not sooner: over a slow mobile network or a relay the first connection can take a while.
+    p.since = Date.now();
     const watch = () => {
       if (call !== c || c.peers.get(uid) !== p) return;
-      if (pc.connectionState !== 'connected' && !p.polite && pc.restartIce) pc.restartIce();
-      p.watch = setTimeout(watch, 8000);
+      if (pc.connectionState !== 'connected' && p.since && Date.now() - p.since > 25000 && !p.polite && pc.restartIce){ pc.restartIce(); p.since = Date.now(); note('restart'); }
+      p.watch = setTimeout(watch, 5000);
     };
-    p.watch = setTimeout(watch, 8000);
+    p.watch = setTimeout(watch, 5000);
     return p;
   }
   function dropPeer(c, uid){
@@ -2182,7 +2220,10 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     try { p.pc.close(); } catch {}
     c.peers.delete(uid);
   }
-  function sendSig(c, to, data){ Promise.resolve(c.ch.send({ type: 'broadcast', event: 'sig', payload: { from: me, to, ...data } })).catch(() => {}); }
+  function sendSig(c, to, data){
+    const p = c.peers.get(to); if (p) p.log[data.type === 'desc' ? 'descOut' : 'iceOut']++;
+    Promise.resolve(c.ch.send({ type: 'broadcast', event: 'sig', payload: { from: me, to, ...data } })).catch(() => {});
+  }
   // Signals from one person are handled strictly one after another: an answer and a new offer can arrive almost together
   function onSignal(c, s){
     if (call !== c || !s || s.to !== me || !s.from || s.from === me) return;
@@ -2192,6 +2233,7 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
   async function handleSignal(c, p, s){
     if (call !== c) return;
     const pc = p.pc;
+    p.log[s.type === 'desc' ? 'descIn' : 'iceIn']++;
     try {
       if (s.type === 'desc' && s.sdp){
         const collision = s.sdp.type === 'offer' && (p.makingOffer || pc.signalingState !== 'stable');
@@ -2213,13 +2255,16 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     if (!c) return;
     call = null;
     clearTimeout(c.ringT); clearTimeout(c.aloneT); clearInterval(c.timer); stopRingback();
-    for (const uid of [...c.peers.keys()]) dropPeer(c, uid);
     c.stream.getTracks().forEach(t => t.stop());
-    try { await c.ch.untrack(); } catch {}
-    sb.removeChannel(c.ch);
     $('call').hidden = true; $('call-grid').replaceChildren(); $('call-fx').replaceChildren(); showCallEmojis(false);
     const self = $('call-self'); self.srcObject = null; self.hidden = true;
     keepAwake(false);
+    const report = c.peers.size ? callReport(c) : null; // how the connections went, read before they are closed
+    try { await c.ch.untrack(); } catch {}
+    sb.removeChannel(c.ch);
+    const info = report && await report.catch(() => null);
+    for (const uid of [...c.peers.keys()]) dropPeer(c, uid);
+    if (info) Promise.resolve(sb.from('call_stats').insert({ message_id: c.id, info })).catch(() => {});
     if (c.mine){
       const text = reason === 'missed' || reason === 'declined' ? reason : c.joined ? 'ended:' + Math.max(1, Math.round((Date.now() - c.t0) / 1000)) : 'missed';
       const { data } = await sb.from('messages').update({ text }).eq('id', c.id).select().single();
@@ -2227,6 +2272,37 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     }
     if (reason === 'missed') toast('Niemand hat abgenommen.');
     renderLog();
+  }
+
+  // A short technical report after each call (call_stats, see anrufe2.sql): how the phones found each other, no sound or pictures
+  function deviceName(){
+    const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    const br = /SamsungBrowser/.test(ua) ? 'Samsung' : /Edg\//.test(ua) ? 'Edge' : /FxiOS|Firefox/.test(ua) ? 'Firefox' : /CriOS|Chrome/.test(ua) ? 'Chrome' : /Safari/.test(ua) ? 'Safari' : 'anderer';
+    return (ios ? 'iOS' : /Android/.test(ua) ? 'Android' : 'Computer') + ' ' + br + (matchMedia('(display-mode: standalone)').matches || navigator.standalone ? ' App' : '');
+  }
+  async function peerReport(p){
+    const out = { polite: p.polite, state: p.pc.connectionState, ...p.log, tracks: p.log.tracks.join(','), states: p.log.states.join(',') };
+    try {
+      const st = await Promise.race([p.pc.getStats(), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 1500))]);
+      const by = new Map(); st.forEach(r => by.set(r.id, r));
+      let pair = null;
+      st.forEach(r => { if (r.type === 'transport' && r.selectedCandidatePairId) pair = by.get(r.selectedCandidatePairId); });
+      if (!pair) st.forEach(r => { if (r.type === 'candidate-pair' && r.state === 'succeeded' && (r.nominated || r.selected)) pair = r; });
+      if (pair){ const l = by.get(pair.localCandidateId), r = by.get(pair.remoteCandidateId); out.pair = `${l?.candidateType}/${l?.protocol} - ${r?.candidateType}/${r?.protocol}`; }
+      const local = new Set(), remote = new Set();
+      st.forEach(r => {
+        if (r.type === 'local-candidate') local.add(r.candidateType + '/' + r.protocol);
+        else if (r.type === 'remote-candidate') remote.add(r.candidateType + '/' + r.protocol);
+        else if (r.type === 'inbound-rtp') out['in_' + (r.kind || r.mediaType)] = r.bytesReceived || 0;
+        else if (r.type === 'outbound-rtp') out['out_' + (r.kind || r.mediaType)] = r.bytesSent || 0;
+      });
+      out.local = [...local].join(','); out.remote = [...remote].join(',');
+    } catch (err){ out.statsError = String(err?.message || err).slice(0, 80); }
+    return out;
+  }
+  async function callReport(c){
+    return { device: deviceName(), net: navigator.connection?.type || navigator.connection?.effectiveType || '', turn: c.turn, video: c.camAtStart, mine: c.mine,
+      joined: c.joined, secs: c.joined ? Math.round((Date.now() - c.t0) / 1000) : 0, peers: await Promise.all([...c.peers.values()].map(peerReport)) };
   }
 
   // The call screen: one tile per person, their video or their picture
@@ -2246,7 +2322,9 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
         grid.append(t);
       }
       const v = t.querySelector('video'), a = t.querySelector('audio');
-      if (v.srcObject !== p.stream){ v.srcObject = p.stream; a.srcObject = p.stream; v.play().catch(() => {}); a.play().catch(() => {}); }
+      if (v.srcObject !== p.stream || p.fresh){ p.fresh = false; v.srcObject = p.stream; a.srcObject = p.stream; }
+      if (v.paused) v.play().catch(() => {});
+      if (a.paused && p.stream.getAudioTracks().length) a.play().catch(err => { if (err?.name === 'NotAllowedError') needTap(c); });
       v.hidden = !(p.meta.cam && p.stream.getVideoTracks().some(tr => tr.readyState === 'live'));
       const state = p.pc.connectionState;
       t.querySelector('.tile-name').textContent = (nameOf(c.gid, p.uid) || p.meta.name || 'Jemand') + (p.meta.mic === false ? ' 🔇' : '') + (state === 'connected' ? '' : state === 'failed' ? ' · Verbindung klappt nicht' : ' · verbindet …');
@@ -2266,6 +2344,13 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     $('call-cam').setAttribute('aria-pressed', String(c.cam)); $('call-cam').setAttribute('aria-label', c.cam ? 'Kamera aus' : 'Kamera an');
     $('call-flip').hidden = !c.cam;
     renderCallStatus();
+  }
+  // The browser did not allow sound to start by itself: one tap on the call screen starts it
+  function needTap(c){
+    if (c.tapHint) return;
+    c.tapHint = true;
+    toast('Tippe einmal auf den Bildschirm, damit du die anderen hörst.');
+    $('call').addEventListener('pointerdown', () => { for (const el of $('call-grid').querySelectorAll('audio, video')) el.play().catch(() => {}); }, { once: true });
   }
   function renderCallStatus(){
     const c = call;
@@ -2366,6 +2451,7 @@ button.pick{width:100%;border:0;background:none;color:inherit;text-align:left}
     $('ring-video-wrap').hidden = !video;
     $('ring').hidden = false;
     startRingtone();
+    iceServers().catch(() => {}); // ready when answering
   }
   function stopRing(){
     if (!ringing) return;
